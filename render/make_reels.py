@@ -10,6 +10,9 @@ import sys
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import draw_lib as L  # noqa: E402
+
 W, H, FPS = 1080, 1920, 30
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "out", "math-attitude-reels.mp4")
@@ -98,40 +101,31 @@ def build_bg():
     return bg
 
 
-def build_card(tone="neutral", w=392, h=524):
-    """학습지 카드 (그림자 포함 RGBA)"""
-    pad = 34
-    img = Image.new("RGBA", (w + pad * 2, h + pad * 2), (0, 0, 0, 0))
-    sh = Image.new("RGBA", img.size, (0, 0, 0, 0))
-    ImageDraw.Draw(sh).rounded_rectangle([pad, pad + 14, pad + w, pad + h + 14],
-                                         radius=26, fill=(0, 0, 0, 150))
-    img.alpha_composite(sh.filter(ImageFilter.GaussianBlur(20)))
-
-    c = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    d = ImageDraw.Draw(c)
-    d.rounded_rectangle([0, 0, w - 1, h - 1], radius=26, fill=PAPER + (255,))
-    d.rounded_rectangle([0, 0, w - 1, 84], radius=26, fill=(226, 221, 210, 255))
-    d.rectangle([0, 60, w - 1, 84], fill=(226, 221, 210, 255))
-    d.line([(0, 84), (w, 84)], fill=(196, 189, 175, 255), width=2)
-    # 문제 줄
-    y = 132
-    rows = 0
-    while y < h - 60:
-        wid = w - 76 if rows % 3 != 2 else int((w - 76) * 0.62)
-        d.rounded_rectangle([38, y, 38 + wid, y + 9], radius=5, fill=RULE + (255,))
-        y += 46
-        rows += 1
-    accent = {"mint": MINT, "coral": CORAL}.get(tone)
-    if accent:
-        d.rounded_rectangle([0, h - 12, w - 1, h - 1], radius=6, fill=accent + (255,))
-    img.alpha_composite(c, (pad, pad))
-    return img
-
-
 BG = build_bg()
-CARD_N = build_card("neutral")
-CARD_M = build_card("mint")
-CARD_C = build_card("coral")
+# 실제 학습지 사진 (assets/worksheet-a.jpg = 빼곡히 푼 것, -b.jpg = 손대지 않은 것)
+CARD_A, CARD_B, USING_PHOTO = L.cards(392, 524)
+CARD_A2, CARD_B2, _ = L.cards(344, 460)
+# 손그림 학생 — 바른 자세 / 엎드린 자세
+
+
+def fit_h(im, h):
+    return im.resize((max(1, round(im.width * h / im.height)), int(h)), Image.LANCZOS)
+
+
+_UP = L.student("upright", 1100, MINT, (84, 94, 110))
+_SL = L.student("slumped", 1100, CORAL, (84, 94, 110))
+STU_UP_S, STU_SL_S = fit_h(_UP, 268), fit_h(_SL, 268)     # 학습지 아래 작게
+STU_UP_L, STU_SL_L = fit_h(_UP, 442), fit_h(_SL, 442)     # 인물 장면
+
+
+def paste_top(base, im, cx, top, alpha=255):
+    """윗변 기준 배치 — 화면 아래쪽 안전 영역을 넘지 않게 계산하기 쉽다"""
+    if alpha <= 0:
+        return
+    if alpha < 255:
+        im = im.copy()
+        im.putalpha(im.getchannel("A").point(lambda v: int(v * alpha / 255)))
+    base.alpha_composite(im, (int(cx - im.width / 2), int(top)))
 
 
 def paste(base, im, cx, cy, alpha=255, scale=1.0):
@@ -178,21 +172,21 @@ def s1_hook(base, d, t, dur):
 
 
 def s2_cards(base, d, t, dur):
-    a, dy = rise(t, 0.1, 0.5, 34)
-    text(d, (W / 2, 520 + dy), "여기 두 장의 학습지가 있습니다", font(F_BOLD, 58), WHITE, a)
-
     pl = eo(seg(t, 0.35, 0.7))
     pr = eo(seg(t, 0.5, 0.7))
-    paste(base, CARD_N, 300 - (1 - pl) * 220, 1080, int(255 * pl))
-    paste(base, CARD_N, 780 + (1 - pr) * 220, 1080, int(255 * pr))
+    paste(base, CARD_A, 292 - (1 - pl) * 220, 980, int(255 * pl))
+    paste(base, CARD_B, 788 + (1 - pr) * 220, 980, int(255 * pr))
 
-    ac, _ = rise(t, 1.0, 0.45, 0)
-    chip(d, 300, 800, "A", WHITE, ac, 40)
-    chip(d, 780, 800, "B", WHITE, ac, 40)
+    # 학습지 아래, 그 종이의 주인이 앉아 있던 자세를 손그림으로
+    ab = int(150 * eo(seg(t, 1.5, 0.9)))
+    paste_top(base, STU_UP_S, 292, 1330, ab)
+    paste_top(base, STU_SL_S, 788, 1330, ab)
 
-    a2, dy2 = rise(t, 1.5, 0.55, 30)
-    text(d, (W / 2, 1470 + dy2), "비슷한 수준에서 출발한\n두 아이의 것입니다",
-         font(F_REG, 50), MUTED, a2)
+    a, dy = rise(t, 0.1, 0.5, 34)
+    text(d, (W / 2, 470 + dy), "여기 두 장의 학습지가 있습니다", font(F_BOLD, 58), WHITE, a)
+    a2, _ = rise(t, 0.9, 0.5, 0)
+    text(d, (W / 2, 570), "비슷한 수준에서 출발한 두 아이의 것입니다",
+         font(F_REG, 44), MUTED, a2)
 
 
 def s3_same(base, d, t, dur):
@@ -269,61 +263,69 @@ def s5_head(base, d, t, dur):
 
 
 def s6_a(base, d, t, dur):
+    paste_top(base, STU_UP_L, W / 2, 1140, int(190 * eo(seg(t, 0.15, 0.9))))
+
     ac, _ = rise(t, 0.05, 0.45, 0)
-    chip(d, W / 2, 430, "성적이 오른 아이", MINT, ac, 40)
+    chip(d, W / 2, 400, "성적이 오른 아이", MINT, ac, 40)
 
     a, dy = rise(t, 0.4, 0.55, 34)
-    text(d, (W / 2, 620 + dy), "방향을 코칭해 주면", font(F_REG, 54), MUTED, a)
+    text(d, (W / 2, 550 + dy), "방향을 코칭해 주면", font(F_REG, 54), MUTED, a)
 
     for i, (s, st) in enumerate([("\"잘 안 되더라도", 0.85), ("일단 해볼게요\"", 1.35)]):
         a2, dy2 = rise(t, st, 0.5, 36)
-        y = 880 + i * 190 + dy2
+        y = 740 + i * 172 + dy2
         f = font(F_BOLD, 76)
         tw = d.textlength(s, font=f)
-        d.rounded_rectangle([W / 2 - tw / 2 - 34, y - 62, W / 2 + tw / 2 + 34, y + 62],
-                            radius=30, fill=rgba(MINT, a2 * 0.14))
+        d.rounded_rectangle([W / 2 - tw / 2 - 34, y - 60, W / 2 + tw / 2 + 34, y + 60],
+                            radius=30, fill=rgba(MINT, a2 * 0.16))
         text(d, (W / 2, y), s, f, WHITE, a2)
 
     a3, dy3 = rise(t, 2.05, 0.55, 30)
-    text(d, (W / 2, 1330 + dy3), "틀려도 손이 먼저 움직입니다", font(F_BOLD, 52), MINT, a3)
-    a4, dy4 = rise(t, 2.5, 0.55, 30)
-    text(d, (W / 2, 1460 + dy4), "정답보다 시도가 먼저입니다", font(F_REG, 44), DIM, a4)
+    text(d, (W / 2, 1040 + dy3), "틀려도 손이 먼저 움직입니다", font(F_BOLD, 52), MINT, a3)
 
 
 def s7_b(base, d, t, dur):
+    paste_top(base, STU_SL_L, W / 2, 1140, int(190 * eo(seg(t, 0.15, 0.9))))
+
     ac, _ = rise(t, 0.05, 0.45, 0)
-    chip(d, W / 2, 430, "1년째 제자리인 아이", CORAL, ac, 40)
+    chip(d, W / 2, 400, "1년째 제자리인 아이", CORAL, ac, 40)
 
     lines = [
         ("\"에이, 나만 못해.\"", 0.45),
-        ("\"못 풀어요.\"", 1.35),
-        ("\"읽기도 싫어요.\"", 2.25),
+        ("\"못 풀어요.\"", 1.30),
+        ("\"읽기도 싫어요.\"", 2.15),
     ]
     for i, (s, st) in enumerate(lines):
         a, dy = rise(t, st, 0.5, 36)
-        y = 660 + i * 190 + dy
+        y = 548 + i * 172 + dy
         f = font(F_BOLD, 76)
         tw = d.textlength(s, font=f)
-        d.rounded_rectangle([W / 2 - tw / 2 - 34, y - 62, W / 2 + tw / 2 + 34, y + 62],
-                            radius=30, fill=rgba(CORAL, a * 0.14))
+        d.rounded_rectangle([W / 2 - tw / 2 - 34, y - 60, W / 2 + tw / 2 + 34, y + 60],
+                            radius=30, fill=rgba(CORAL, a * 0.16))
         text(d, (W / 2, y), s, f, WHITE, a)
 
-    a4, dy4 = rise(t, 3.15, 0.6, 34)
-    text(d, (W / 2, 1330 + dy4), "시도조차 하지 않습니다.", font(F_REG, 54), MUTED, a4)
-    a5, dy5 = rise(t, 3.65, 0.6, 34)
-    text(d, (W / 2, 1470 + dy5), "푸는 게 아니라 글씨만 읽어 보자고 해도\n그것마저 거부합니다.",
-         font(F_REG, 46), DIM, a5)
+    a5, dy5 = rise(t, 3.05, 0.6, 30)
+    text(d, (W / 2, 1030 + dy5), "푸는 게 아니라 글씨만 읽어 보자고 해도\n그것마저 거부합니다.",
+         font(F_REG, 46), MUTED, a5, spacing=14)
 
 
 def s8_result(base, d, t, dur):
+    pc = eo(seg(t, 0.9, 0.7))
+    paste(base, CARD_A2, 296, 1140, int(255 * pc))
+    paste(base, CARD_B2, 784, 1140, int(255 * pc))
+
     a, dy = rise(t, 0.1, 0.55, 40)
-    text(d, (W / 2, 830 + dy), "미안하지만,", font(F_REG, 60), MUTED, a)
-    a2, dy2 = rise(t, 0.55, 0.6, 50)
-    text(d, (W / 2, 1000 + dy2), "결과는 뻔합니다.", font(F_BOLD, 116), WHITE, a2)
-    p = eo(seg(t, 1.2, 0.5))
+    text(d, (W / 2, 520 + dy), "미안하지만,", font(F_REG, 56), MUTED, a)
+    a2, dy2 = rise(t, 0.45, 0.6, 46)
+    text(d, (W / 2, 650 + dy2), "결과는 뻔합니다.", font(F_BOLD, 104), WHITE, a2)
+    p = eo(seg(t, 1.0, 0.5))
     if p > 0:
-        d.rounded_rectangle([W / 2 - 300 * p, 1120, W / 2 + 300 * p, 1126], radius=3,
+        d.rounded_rectangle([W / 2 - 280 * p, 730, W / 2 + 280 * p, 736], radius=3,
                             fill=rgba(CORAL, 200))
+
+    ac, _ = rise(t, 1.8, 0.5, 0)
+    chip(d, 296, 1520, "매일 시도한 1년", MINT, ac, 34)
+    chip(d, 784, 1520, "매일 미룬 1년", CORAL, ac, 34)
 
 
 def s9_end(base, d, t, dur):
@@ -345,13 +347,13 @@ def s9_end(base, d, t, dur):
 
 SCENES = [
     (3.6, s1_hook),
-    (4.3, s2_cards),
+    (4.8, s2_cards),
     (3.9, s3_same),
     (5.0, s4_gap),
     (4.4, s5_head),
-    (4.2, s6_a),
-    (5.6, s7_b),
-    (3.0, s8_result),
+    (4.4, s6_a),
+    (5.8, s7_b),
+    (4.4, s8_result),
     (5.2, s9_end),
 ]
 TOTAL = sum(s[0] for s in SCENES)
