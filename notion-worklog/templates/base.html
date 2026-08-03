@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111418">
+  <title>{% block title %}현장 업무 기록{% endblock %}</title>
+  <link rel="icon" href="/static/icon.svg">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">현장 업무 기록</span>
+    <nav>
+      <a href="/" class="{{ 'on' if nav == 'new' else '' }}">등록</a>
+      <a href="/entries" class="{{ 'on' if nav == 'list' else '' }}">목록</a>
+      {% if db_url %}<a href="{{ db_url }}" target="_blank" rel="noopener">노션</a>{% endif %}
+    </nav>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

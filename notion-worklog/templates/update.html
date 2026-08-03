@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% set nav = 'list' %}
+{% block title %}{{ title }} · 진행 업데이트{% endblock %}
+
+{% block content %}
+<form class="card" id="worklog-form" data-endpoint="/api/entries/{{ page_id }}/progress" novalidate>
+  <h1>{{ title }}</h1>
+  <p class="meta">
+    {% if work_date %}<span>{{ work_date }}</span>{% endif %}
+    {% if address %}<span>{{ address }}</span>{% endif %}
+    {% if current_status %}<span class="badge">{{ current_status }}</span>{% endif %}
+  </p>
+
+  <label class="field">
+    <span>진행상태 변경</span>
+    <select name="status">
+      <option value="">그대로 두기</option>
+      {% for status in statuses %}
+      <option value="{{ status }}" {{ 'disabled' if status == current_status else '' }}>{{ status }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label class="field">
+    <span>작성자</span>
+    <input name="owner" type="text" list="owner-options" placeholder="이름" autocomplete="off">
+    <datalist id="owner-options">
+      {% for owner in owners %}<option value="{{ owner }}"></option>{% endfor %}
+    </datalist>
+  </label>
+
+  <label class="field">
+    <span>진행 메모</span>
+    <textarea name="memo" rows="4" placeholder="예) 타일 시공 완료, 마감재는 내일 반입 예정"></textarea>
+  </label>
+
+  <div class="field">
+    <span>진행 사진</span>
+    <label class="picker">
+      <input name="photos" type="file" accept="image/*" multiple>
+      <span class="picker-face">사진 찍기 / 앨범에서 고르기</span>
+    </label>
+    <ul class="filelist" data-for="photos"></ul>
+  </div>
+
+  <div class="progress" hidden><div class="bar"></div><span class="progress-label">업로드 중…</span></div>
+  <p class="error" hidden></p>
+
+  <button class="submit" type="submit">진행 내용 올리기</button>
+</form>
+
+<section class="card result" hidden>
+  <h2 class="result-message">업데이트 완료</h2>
+  <a class="result-link" href="{{ page_url }}" target="_blank" rel="noopener">노션에서 열기</a>
+  <div class="result-actions">
+    <button type="button" class="ghost" data-action="copy">링크 복사</button>
+    <button type="button" class="ghost" data-action="share" hidden>공유하기</button>
+    <a class="ghost" href="/entries">목록으로</a>
+  </div>
+</section>
+{% endblock %}

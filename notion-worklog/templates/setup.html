@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}설정 필요 · 현장 업무 기록{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1>노션 연결이 아직 안 됐습니다</h1>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <p class="hint">아래 세 줄만 끝내면 바로 쓸 수 있습니다. 자세한 그림 설명은 <code>README.md</code>에 있습니다.</p>
+  <ol class="steps">
+    <li>
+      <a href="https://www.notion.so/my-integrations" target="_blank" rel="noopener">notion.so/my-integrations</a>
+      에서 integration을 만들고 <b>Internal Integration Secret</b>(<code>ntn_…</code>)을 복사합니다.
+    </li>
+    <li>
+      노션에서 업무 기록을 담을 페이지를 하나 만들고, 그 페이지 우측 상단 <b>···  →  연결</b>에서
+      방금 만든 integration을 추가합니다.
+    </li>
+    <li>
+      <code>.env</code>에 <code>NOTION_TOKEN</code>을 넣고
+      <code>python setup_db.py --parent-page &lt;페이지 URL&gt;</code> 을 실행한 뒤,
+      출력된 <code>NOTION_DATABASE_ID</code>도 <code>.env</code>에 넣고 서버를 다시 시작합니다.
+    </li>
+  </ol>
+</div>
+{% endblock %}

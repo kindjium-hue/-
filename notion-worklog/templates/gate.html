@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}접속 코드 · 현장 업무 기록{% endblock %}
+
+{% block content %}
+<form class="card" method="post" action="/gate">
+  <h1>접속 코드</h1>
+  <p class="hint">회사에서 받은 코드를 입력하세요. 한 번 입력하면 30일간 유지됩니다.</p>
+  {% if error %}<p class="error">코드가 맞지 않습니다.</p>{% endif %}
+  <input type="hidden" name="next" value="{{ next }}">
+  <label class="field">
+    <span>코드</span>
+    <input name="code" type="password" autocomplete="current-password" required>
+  </label>
+  <button class="submit" type="submit">들어가기</button>
+</form>
+{% endblock %}
