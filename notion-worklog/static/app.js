@@ -217,6 +217,12 @@ function showResult(form, result) {
   if (message && result.message) message.textContent = result.message;
   if (link && result.url) link.href = result.url;
 
+  const warning = panel.querySelector(".result-warning");
+  if (warning && result.warning) {
+    warning.textContent = result.warning;
+    warning.hidden = false;
+  }
+
   const shareButton = panel.querySelector('[data-action="share"]');
   if (shareButton && navigator.share) shareButton.hidden = false;
 

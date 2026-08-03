@@ -8,18 +8,23 @@ from __future__ import annotations
 import io
 import json
 import os
+import tempfile
 import unittest
+from datetime import date
+from pathlib import Path
 
 os.environ.setdefault("NOTION_TOKEN", "test-token")
 os.environ.setdefault("NOTION_DATABASE_ID", "d" * 32)
 os.environ.setdefault("WORKLOG_ACCESS_CODE", "")
 
+import fitz
 import httpx
 from fastapi.testclient import TestClient
 from PIL import Image
 
 import app as worklog
 import notion_api as na
+import quote
 
 DB_SCHEMA = {
     "id": "d" * 32,
@@ -34,6 +39,7 @@ DB_SCHEMA = {
         "담당자": {"type": "select", "select": {"options": [{"name": "김기사"}]}},
         "주소": {"type": "rich_text", "rich_text": {}},
         "연락처": {"type": "phone_number", "phone_number": {}},
+        "면적": {"type": "number", "number": {"format": "number"}},
         "견적금액": {"type": "number", "number": {"format": "won"}},
         "견적서": {"type": "files", "files": {}},
     },
@@ -242,6 +248,156 @@ class WorklogTest(unittest.TestCase):
         url = "https://www.notion.so/workspace/My-Page-1234567890abcdef1234567890abcdef?pvs=4"
         self.assertEqual(na.normalize_id(url), "1234567890abcdef1234567890abcdef")
         self.assertEqual(na.normalize_id("1234-5678"), "12345678")
+
+
+class QuoteTest(unittest.TestCase):
+    """견적서 자동 생성 (고객명 + 면적)."""
+
+    def setUp(self):
+        self.config = quote.load_config()
+
+    def test_korean_amount(self):
+        cases = {
+            1_200_000: "일백이십만",
+            1_650_000: "일백육십오만",
+            3_260_000: "삼백이십육만",
+            10_000: "일만",
+            1_235_000: "일백이십삼만오천",
+            120: "일백이십",
+        }
+        for value, expected in cases.items():
+            self.assertEqual(quote.korean_amount(value), expected, value)
+
+    def test_items_follow_area(self):
+        items = quote.build_items(10, self.config)
+        by_name = {item.name: item for item in items}
+        self.assertEqual(by_name["크랙보수"].quantity, 10)
+        self.assertEqual(by_name["크랙보수"].amount, 250_000)
+        self.assertEqual(by_name["표면 방수제 도포"].amount, 300_000)
+        self.assertEqual(by_name["스카이 차량"].quantity, 1)  # 고정 항목
+
+        built = quote.build_quote("탑동 881~8", 10, config=self.config)
+        self.assertEqual(built.subtotal, 1_650_000)
+        self.assertEqual(built.total, 1_650_000)  # 네고 금액 없으면 합계 그대로
+
+        doubled = quote.build_quote("탑동 881~8", 20, config=self.config)
+        self.assertEqual(doubled.subtotal, 1_650_000 + 550_000)
+
+    def test_final_amount_overrides_total(self):
+        built = quote.build_quote("탑동 881~8", 10, final_amount=1_400_000, config=self.config)
+        self.assertEqual(built.subtotal, 1_650_000)
+        self.assertEqual(built.total, 1_400_000)
+
+    def test_pdf_contains_form_text(self):
+        built = quote.build_quote(
+            "탑동 881~8", 10, final_amount=1_400_000,
+            quote_date=date(2026, 7, 21), config=self.config,
+        )
+        pdf = quote.render_bytes(built)
+        self.assertTrue(pdf.startswith(b"%PDF"))
+
+        with fitz.open(stream=pdf, filetype="pdf") as document:
+            self.assertEqual(document.page_count, 1)
+            text = document[0].get_text()
+
+        for expected in (
+            "견 적 서", "2026 년 7 월 21일", "탑동 881~8 귀중", "아래와 같이 견적합니다.",
+            "청명종합설비", "윤병동", "552-08-01511", "방수미장 공사업",
+            "일금 일백사십만원정", "1,400,000", "외벽방수", "크랙보수", "표면 방수제 도포",
+            "1,650,000", "특", "송경훈", "착수금50%,잔금50%",
+        ):
+            self.assertIn(expected, text, expected)
+
+    def test_filename(self):
+        built = quote.build_quote("탑동 881~8", 10, quote_date=date(2026, 8, 3), config=self.config)
+        self.assertEqual(quote.suggest_filename(built), "견적서_청명종합설비_탑동881~8_20260803.pdf")
+
+    def test_area_must_be_positive(self):
+        with self.assertRaises(quote.QuoteError):
+            quote.build_quote("탑동", 0, config=self.config)
+        with self.assertRaises(quote.QuoteError):
+            quote.build_quote("  ", 10, config=self.config)
+
+    def test_cli_writes_pdf(self):
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder) / "견적서.pdf"
+            code = quote.main(["--고객", "탑동 881~8", "--면적", "10", "-o", str(out)])
+            self.assertEqual(code, 0)
+            self.assertTrue(out.exists() and out.stat().st_size > 5000)
+
+    def test_cli_discount_rounds_down(self):
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder) / "q.pdf"
+            self.assertEqual(
+                quote.main(["--고객", "탑동", "--면적", "10", "--할인", "15", "-o", str(out)]), 0
+            )
+            with fitz.open(out) as document:
+                # 1,650,000의 15% 할인 → 1,402,500 → 만원 단위 내림
+                self.assertIn("1,400,000", document[0].get_text())
+
+
+class QuoteWebTest(unittest.TestCase):
+    """웹 폼과 견적서 생성이 이어지는지."""
+
+    def setUp(self):
+        self.fake = FakeNotion()
+        worklog._notion = self.fake.client
+        worklog._schema_cache["value"] = None
+        self.client = TestClient(worklog.app)
+
+    def test_quote_page_lists_prices(self):
+        response = self.client.get("/quote")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("견적서 만들기", response.text)
+        self.assertIn("크랙보수", response.text)
+        self.assertIn("25,000원", response.text)
+
+    def test_quote_api_returns_pdf(self):
+        response = self.client.post(
+            "/api/quote", data={"customer": "탑동 881~8", "area": "10 ㎡"}
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.headers["content-type"], "application/pdf")
+        self.assertIn("UTF-8''", response.headers["content-disposition"])
+        self.assertTrue(response.content.startswith(b"%PDF"))
+        with fitz.open(stream=response.content, filetype="pdf") as document:
+            self.assertIn("탑동 881~8 귀중", document[0].get_text())
+
+    def test_quote_api_rejects_bad_area(self):
+        response = self.client.post("/api/quote", data={"customer": "탑동", "area": "넓음"})
+        self.assertEqual(response.status_code, 400)
+
+    def test_entry_attaches_generated_quote(self):
+        response = self.client.post(
+            "/api/entries",
+            data={"title": "탑동 881~8", "status": "예정", "area": "10"},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["warning"], "")
+
+        properties = self.fake.created_page()["properties"]
+        self.assertEqual(properties["면적"]["number"], 10)
+        # 견적금액을 비워 두면 계산된 합계가 들어간다
+        self.assertEqual(properties["견적금액"]["number"], 1_650_000)
+        self.assertEqual(len(properties["견적서"]["files"]), 1)
+        self.assertTrue(properties["견적서"]["files"][0]["name"].endswith(".pdf"))
+
+        uploaded = [body for method, path, body in self.fake.calls if path == "/v1/file_uploads"]
+        self.assertEqual(uploaded[0]["content_type"], "application/pdf")
+
+    def test_entry_keeps_manual_amount(self):
+        self.client.post(
+            "/api/entries",
+            data={"title": "탑동 881~8", "area": "10", "amount": "1,400,000"},
+        )
+        properties = self.fake.created_page()["properties"]
+        self.assertEqual(properties["견적금액"]["number"], 1_400_000)
+
+    def test_entry_without_area_generates_nothing(self):
+        self.client.post("/api/entries", data={"title": "면적 없음"})
+        properties = self.fake.created_page()["properties"]
+        self.assertNotIn("견적서", properties)
+        self.assertNotIn("면적", properties)
 
 
 class AccessCodeTest(unittest.TestCase):

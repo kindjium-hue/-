@@ -35,5 +35,6 @@ python3 render/make_reels.py [출력경로]
 
 ## 함께 들어 있는 도구
 
-`notion-worklog/` — 현장 업무의 일정·진행상태·사진·견적서를 휴대폰 웹 폼으로 올려
-노션 데이터베이스에 쌓는 작은 서버입니다. 설정 방법은 `notion-worklog/README.md` 참고.
+`notion-worklog/` — 청명종합설비 현장 업무의 일정·진행상태·사진·견적서를 휴대폰 웹 폼으로 올려
+노션 데이터베이스에 쌓는 작은 서버입니다. 고객명과 면적만 넣으면 회사 견적서 양식 그대로
+PDF도 만들어 줍니다. 설정 방법은 `notion-worklog/README.md` 참고.

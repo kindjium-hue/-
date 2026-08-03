@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% set nav = 'quote' %}
+{% block title %}견적서 만들기 · {{ company_name }}{% endblock %}
+
+{% block content %}
+<form class="card" method="post" action="/api/quote">
+  <h1>견적서 만들기</h1>
+  <p class="hint">고객명과 면적만 넣으면 회사 견적서 양식 그대로 PDF가 내려옵니다. 그대로 카톡으로 보내면 됩니다.</p>
+
+  <label class="field">
+    <span>고객명 · 현장명 <b class="req">*</b></span>
+    <input name="customer" type="text" required placeholder="예) 탑동 881~8" autocomplete="off">
+    <p class="hint">뒤에 '귀중'은 자동으로 붙습니다.</p>
+  </label>
+
+  <label class="field">
+    <span>면적 <b class="req">*</b></span>
+    <div class="inline">
+      <input name="area" type="text" inputmode="decimal" required placeholder="10" autocomplete="off">
+      <em>{{ area_unit }}</em>
+    </div>
+  </label>
+
+  <details class="more">
+    <summary>세부 조정 (선택)</summary>
+    <label class="field">
+      <span>최종 네고 금액 (원)</span>
+      <input name="amount" type="text" inputmode="numeric" placeholder="비우면 합계 그대로" autocomplete="off">
+    </label>
+    <label class="field">
+      <span>견적일</span>
+      <input name="quote_date" type="date" value="{{ today }}">
+    </label>
+    <label class="field">
+      <span>공사명</span>
+      <input name="project" type="text" placeholder="{{ project }}" autocomplete="off">
+    </label>
+  </details>
+
+  <button class="submit" type="submit">견적서 PDF 받기</button>
+</form>
+
+<section class="card">
+  <h2>현재 단가</h2>
+  <p class="hint"><code>quote_config.json</code>을 고치면 바로 반영됩니다.</p>
+  <ul class="pricelist">
+    {% for row in rows %}
+    <li><span class="name">{{ row.name }}</span><span class="basis">{{ row.basis }}</span><span class="size">{{ row.price }}원</span></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

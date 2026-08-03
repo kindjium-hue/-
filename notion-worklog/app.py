@@ -5,8 +5,10 @@
 - GET  /                        새 업무 등록 폼
 - GET  /entries                 최근 업무 목록 (노션 계정 없어도 볼 수 있다)
 - GET  /entries/{page_id}       진행상태 업데이트 폼
-- POST /api/entries             등록 처리 (사진·견적서 업로드 포함)
+- GET  /quote                   견적서만 만들어 내려받는 화면
+- POST /api/entries             등록 처리 (사진·견적서 업로드, 견적서 자동 생성)
 - POST /api/entries/{id}/progress   상태 변경 + 진행 메모/사진 추가
+- POST /api/quote               고객명·면적으로 견적서 PDF 생성
 """
 
 from __future__ import annotations
@@ -18,14 +20,16 @@ import os
 from datetime import date
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote as urlquote
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 import notion_api as na
+import quote as quotelib
 
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
@@ -53,6 +57,7 @@ FIELD_ADDRESS = "주소"
 FIELD_PHONE = "연락처"
 FIELD_AMOUNT = "견적금액"
 FIELD_QUOTE = "견적서"
+FIELD_AREA = "면적"
 
 FALLBACK_STATUSES = ["접수", "견적", "예정", "진행중", "완료", "보류"]
 
@@ -62,6 +67,13 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 _notion: na.Notion | None = None
 _schema_cache: dict[str, Any] = {"at": 0.0, "value": None}
+
+try:  # 화면 머리말에 쓰는 회사 이름
+    templates.env.globals["company_name"] = (
+        quotelib.load_config().get("회사", {}).get("상호명") or "현장 업무 기록"
+    )
+except quotelib.QuoteError:
+    templates.env.globals["company_name"] = "현장 업무 기록"
 
 
 # ------------------------------------------------------------------ 기반 유틸
@@ -162,6 +174,37 @@ def parse_amount(raw: str) -> float | None:
         return None
 
 
+def parse_area(raw: str) -> float | None:
+    cleaned = (raw or "").replace(",", "").replace("㎡", "").replace("m2", "").strip()
+    if not cleaned:
+        return None
+    try:
+        area = float(cleaned)
+    except ValueError:
+        return None
+    return area if area > 0 else None
+
+
+def build_pdf(
+    customer: str,
+    area: float,
+    *,
+    final_amount: int | None = None,
+    quote_date: date | None = None,
+    project: str | None = None,
+) -> tuple[str, bytes, quotelib.Quote]:
+    """견적서 PDF를 만들어 (파일명, 내용, 견적 내역)을 돌려준다."""
+    built = quotelib.build_quote(
+        customer,
+        area,
+        final_amount=final_amount,
+        quote_date=quote_date,
+        project=project,
+        config=quotelib.load_config(),  # 단가를 고치면 서버 재시작 없이 반영된다
+    )
+    return quotelib.suggest_filename(built), quotelib.render_bytes(built), built
+
+
 def notion_error_message(error: na.NotionError) -> str:
     text = str(error)
     if error.status in (401, 404):
@@ -212,6 +255,7 @@ def new_entry(request: Request):
         )
 
     statuses = na.select_options(db_schema, FIELD_STATUS) or FALLBACK_STATUSES
+    config = quotelib.load_config()
     return templates.TemplateResponse(
         request,
         "new.html",
@@ -221,6 +265,36 @@ def new_entry(request: Request):
             "owners": na.select_options(db_schema, FIELD_OWNER),
             "today": date.today().isoformat(),
             "db_url": db_schema.get("url", ""),
+            "area_unit": config.get("면적단위", "㎡"),
+            "company": config.get("회사", {}).get("상호명", ""),
+        },
+    )
+
+
+@app.get("/quote", response_class=HTMLResponse)
+def quote_form(request: Request):
+    if not authorized(request):
+        return RedirectResponse("/gate?next=/quote", status_code=303)
+
+    config = quotelib.load_config()
+    unit = config.get("면적단위", "㎡")
+    rows = [
+        {
+            "name": row.get("품목", ""),
+            "price": f"{int(row.get('단가', 0)):,}",
+            "basis": f"면적 1{unit}당" if isinstance(row.get("수량"), str) else f"{row.get('수량', 1)}식",
+        }
+        for row in config.get("품목", [])
+    ]
+    return templates.TemplateResponse(
+        request,
+        "quote.html",
+        {
+            "rows": rows,
+            "area_unit": unit,
+            "project": config.get("공사명", ""),
+            "today": date.today().isoformat(),
+            "company": config.get("회사", {}).get("상호명", ""),
         },
     )
 
@@ -312,6 +386,47 @@ def progress_form(request: Request, page_id: str):
 # ------------------------------------------------------------------ API 라우트
 
 
+@app.post("/api/quote")
+def create_quote_pdf(
+    request: Request,
+    customer: str = Form(...),
+    area: str = Form(...),
+    amount: str = Form(""),
+    quote_date: str = Form(""),
+    project: str = Form(""),
+):
+    """고객명·면적만으로 견적서 PDF를 만들어 바로 내려준다. 노션이 없어도 동작한다."""
+    if not authorized(request):
+        raise HTTPException(401, "접속 코드를 다시 입력해 주세요.")
+
+    area_value = parse_area(area)
+    if area_value is None:
+        raise HTTPException(400, "면적을 숫자로 입력해 주세요.")
+    try:
+        day = date.fromisoformat(quote_date) if quote_date else None
+    except ValueError:
+        raise HTTPException(400, "견적일 형식이 올바르지 않습니다.")
+
+    try:
+        filename, pdf, _ = build_pdf(
+            customer,
+            area_value,
+            final_amount=int(parse_amount(amount)) if parse_amount(amount) else None,
+            quote_date=day,
+            project=project.strip() or None,
+        )
+    except quotelib.QuoteError as error:
+        raise HTTPException(400, str(error))
+
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{urlquote(filename)}",
+        },
+    )
+
+
 @app.post("/api/entries")
 async def create_entry(
     request: Request,
@@ -323,6 +438,7 @@ async def create_entry(
     address: str = Form(""),
     phone: str = Form(""),
     amount: str = Form(""),
+    area: str = Form(""),
     memo: str = Form(""),
     photos: list[UploadFile] = File(default=[]),
     quotes: list[UploadFile] = File(default=[]),
@@ -335,10 +451,29 @@ async def create_entry(
     if not title:
         raise HTTPException(400, "현장명을 입력해 주세요.")
 
+    area_value = parse_area(area)
+    parsed_amount = parse_amount(amount)
+    warning = ""
+
     try:
         db_schema = schema()
         photo_uploads = await collect_uploads(photos, as_image=True)
         quote_uploads = await collect_uploads(quotes, as_image=False)
+
+        # 면적을 넣었으면 회사 양식 그대로 견적서를 만들어 첨부한다.
+        if area_value is not None:
+            try:
+                filename, pdf, built = build_pdf(
+                    title,
+                    area_value,
+                    final_amount=int(parsed_amount) if parsed_amount else None,
+                )
+                quote_uploads.insert(0, notion().upload(filename, pdf, "application/pdf"))
+                if parsed_amount is None:
+                    parsed_amount = float(built.total)
+            except quotelib.QuoteError as error:
+                logger.warning("견적서 자동 생성 실패: %s", error)
+                warning = f"견적서 자동 생성을 건너뛰었습니다: {error}"
 
         properties: dict[str, Any] = {FIELD_TITLE: {"title": na.rich_text(title)}}
         if status and has_property(db_schema, FIELD_STATUS, "select"):
@@ -354,9 +489,10 @@ async def create_entry(
             properties[FIELD_ADDRESS] = {"rich_text": na.rich_text(address.strip())}
         if phone.strip() and has_property(db_schema, FIELD_PHONE, "phone_number"):
             properties[FIELD_PHONE] = {"phone_number": phone.strip()}
-        parsed_amount = parse_amount(amount)
         if parsed_amount is not None and has_property(db_schema, FIELD_AMOUNT, "number"):
             properties[FIELD_AMOUNT] = {"number": parsed_amount}
+        if area_value is not None and has_property(db_schema, FIELD_AREA, "number"):
+            properties[FIELD_AREA] = {"number": area_value}
         if quote_uploads and has_property(db_schema, FIELD_QUOTE, "files"):
             properties[FIELD_QUOTE] = na.files_property(quote_uploads)
 
@@ -385,6 +521,7 @@ async def create_entry(
             "id": page["id"].replace("-", ""),
             "url": page.get("url", ""),
             "message": f"'{title}' 등록 완료",
+            "warning": warning,
         }
     )
 

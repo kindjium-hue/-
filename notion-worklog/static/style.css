@@ -136,6 +136,38 @@ input:focus, select:focus, textarea:focus {
 .picker input[type="file"]:focus-visible + .picker-face { outline: 2px solid var(--accent); }
 
 .hint { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.hint a { color: var(--accent); }
+
+.boxed {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 12px;
+  background: var(--bg);
+}
+
+.inline { display: flex; align-items: center; gap: 8px; }
+.inline em { font-style: normal; color: var(--muted); font-weight: 600; flex: none; }
+
+.more { margin-bottom: 16px; }
+.more summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  padding: 10px 0;
+}
+
+.pricelist { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.pricelist li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+.pricelist .name { flex: 1; min-width: 0; font-weight: 600; }
+.pricelist .basis { color: var(--muted); font-size: 13px; flex: none; }
 
 .filelist { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
 .filelist li {
