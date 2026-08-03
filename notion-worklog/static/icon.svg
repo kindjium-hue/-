@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="현장 업무 기록">
+  <rect width="64" height="64" rx="14" fill="#2f6df6"/>
+  <rect x="16" y="12" width="32" height="40" rx="5" fill="#ffffff"/>
+  <rect x="24" y="8" width="16" height="9" rx="4" fill="#d7e2ff" stroke="#2f6df6" stroke-width="2"/>
+  <path d="M23 33l6 6 12-14" fill="none" stroke="#2f6df6" stroke-width="5"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

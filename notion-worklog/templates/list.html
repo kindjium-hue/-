@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% set nav = 'list' %}
+{% block title %}업무 목록 · 현장 업무 기록{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1>최근 업무</h1>
+  <div class="chips">
+    <a class="chip {{ 'on' if not active_status else '' }}" href="/entries">전체</a>
+    {% for status in statuses %}
+    <a class="chip {{ 'on' if active_status == status else '' }}" href="/entries?status={{ status }}">{{ status }}</a>
+    {% endfor %}
+  </div>
+
+  {% if not entries %}
+  <p class="hint">아직 등록된 업무가 없습니다. <a href="/">첫 업무를 등록해 보세요.</a></p>
+  {% endif %}
+
+  <ul class="entries">
+    {% for entry in entries %}
+    <li>
+      <a class="entry" href="/entries/{{ entry.id }}">
+        <div class="entry-head">
+          <strong>{{ entry.title }}</strong>
+          {% if entry.status %}<span class="badge">{{ entry.status }}</span>{% endif %}
+        </div>
+        <div class="entry-meta">
+          {% if entry.date %}<span>{{ entry.date }}</span>{% endif %}
+          {% if entry.owner %}<span>{{ entry.owner }}</span>{% endif %}
+          {% if entry.address %}<span>{{ entry.address }}</span>{% endif %}
+        </div>
+        <span class="entry-cta">진행 업데이트 →</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
