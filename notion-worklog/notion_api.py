@@ -20,8 +20,7 @@ from typing import Any, Iterable, Sequence
 
 import httpx
 
-API_BASE = "https://api.notion.com/v1"
-NOTION_VERSION = "2022-06-28"
+from notion_lite import API_BASE, NOTION_VERSION, normalize_id  # noqa: F401 (재수출)
 
 # 20MB까지는 한 번에, 그보다 크면 멀티파트로 쪼개 올린다.
 SINGLE_PART_LIMIT = 20 * 1024 * 1024
@@ -300,14 +299,3 @@ def select_options(schema: dict, name: str) -> list[str]:
     if prop.get("type") == "status":
         return [option["name"] for option in (prop.get("status") or {}).get("options", [])]
     return []
-
-
-def normalize_id(raw: str) -> str:
-    """노션 URL이나 하이픈 없는 id에서 32자리 id를 뽑아낸다."""
-    raw = (raw or "").strip()
-    if not raw:
-        return ""
-    if "notion.so" in raw or raw.startswith("http"):
-        raw = raw.split("?")[0].rstrip("/").rsplit("/", 1)[-1]
-        raw = raw.rsplit("-", 1)[-1]
-    return raw.replace("-", "")

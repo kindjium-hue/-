@@ -10,6 +10,7 @@ import json
 import os
 import tempfile
 import unittest
+import unittest.mock
 from datetime import date
 from pathlib import Path
 
@@ -24,7 +25,9 @@ from PIL import Image
 
 import app as worklog
 import notion_api as na
+import notion_lite
 import quote
+import setup_db
 
 DB_SCHEMA = {
     "id": "d" * 32,
@@ -248,6 +251,76 @@ class WorklogTest(unittest.TestCase):
         url = "https://www.notion.so/workspace/My-Page-1234567890abcdef1234567890abcdef?pvs=4"
         self.assertEqual(na.normalize_id(url), "1234567890abcdef1234567890abcdef")
         self.assertEqual(na.normalize_id("1234-5678"), "12345678")
+
+
+class SetupDbTest(unittest.TestCase):
+    """노션 DB 생성 스크립트 (표준 라이브러리만 쓰는 경로)."""
+
+    def setUp(self):
+        self.calls: list[tuple[str, str, dict | None]] = []
+
+        def fake_request(token, method, path, payload=None):
+            self.calls.append((method, path, payload))
+            if method == "POST" and path == "/databases":
+                return {"id": "d" * 32, "url": "https://www.notion.so/" + "d" * 32}
+            if method == "GET":
+                return {"properties": {"현장명": {"type": "title"}, "주소": {"type": "rich_text"}}}
+            return {}
+
+        patcher = unittest.mock.patch.object(setup_db.nl, "request", fake_request)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_schema_covers_every_field_the_form_writes(self):
+        for name in (
+            worklog.FIELD_TITLE, worklog.FIELD_STATUS, worklog.FIELD_DATE, worklog.FIELD_OWNER,
+            worklog.FIELD_ADDRESS, worklog.FIELD_PHONE, worklog.FIELD_AREA,
+            worklog.FIELD_AMOUNT, worklog.FIELD_QUOTE,
+        ):
+            self.assertIn(name, notion_lite.SCHEMA, name)
+        self.assertEqual(notion_lite.SCHEMA[worklog.FIELD_TITLE], {"title": {}})
+        statuses = [o["name"] for o in notion_lite.SCHEMA["진행상태"]["select"]["options"]]
+        self.assertEqual(statuses, ["접수", "견적", "예정", "진행중", "완료", "보류"])
+
+    def test_create_sends_schema_and_saves_env(self):
+        with tempfile.TemporaryDirectory() as folder:
+            env = Path(folder) / ".env"
+            env.write_text("# 설정\nNOTION_TOKEN=이전값\nWORKLOG_ACCESS_CODE=8282\n", encoding="utf-8")
+            with unittest.mock.patch.object(setup_db, "ENV_PATH", env), \
+                 unittest.mock.patch("builtins.input", return_value=""):
+                code = setup_db.create_database("ntn_test", "p" * 32, "현장 업무", offer_env=True)
+            self.assertEqual(code, 0)
+
+            saved = notion_lite.read_env(env)
+            self.assertEqual(saved["NOTION_TOKEN"], "ntn_test")
+            self.assertEqual(saved["NOTION_DATABASE_ID"], "d" * 32)
+            # 기존 줄과 주석은 그대로 남는다
+            self.assertEqual(saved["WORKLOG_ACCESS_CODE"], "8282")
+            self.assertIn("# 설정", env.read_text(encoding="utf-8"))
+
+        method, path, payload = self.calls[0]
+        self.assertEqual((method, path), ("POST", "/databases"))
+        self.assertEqual(payload["parent"], {"type": "page_id", "page_id": "p" * 32})
+        self.assertEqual(payload["properties"], notion_lite.SCHEMA)
+
+    def test_patch_only_adds_missing_properties(self):
+        self.assertEqual(setup_db.patch_database("ntn_test", "d" * 32), 0)
+        patched = [payload for method, path, payload in self.calls if method == "PATCH"]
+        added = patched[0]["properties"]
+        self.assertIn("진행상태", added)
+        self.assertIn("면적", added)
+        self.assertNotIn("주소", added)  # 이미 있음
+        self.assertNotIn("현장명", added)  # title은 건드리지 않는다
+
+    def test_normalize_id(self):
+        url = "https://www.notion.so/team/현장-업무-1234567890abcdef1234567890abcdef?v=1&pvs=4"
+        self.assertEqual(notion_lite.normalize_id(url), "1234567890abcdef1234567890abcdef")
+        self.assertEqual(notion_lite.normalize_id(""), "")
+
+    def test_http_error_message_is_readable(self):
+        error = notion_lite.NotionHttpError(404, "Could not find page")
+        self.assertEqual(str(error), "Could not find page")
+        self.assertEqual(str(notion_lite.NotionHttpError(500, "")), "노션 API 오류 (HTTP 500)")
 
 
 class QuoteTest(unittest.TestCase):

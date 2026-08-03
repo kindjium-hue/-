@@ -8,6 +8,7 @@
 - 사진은 여러 장 한꺼번에, 브라우저에서 자동으로 크기를 줄여 올립니다.
 - 견적서(PDF·엑셀·한글)는 노션 행의 `견적서` 파일 속성에 바로 첨부됩니다.
 - 이미 등록한 업무는 목록에서 눌러 **진행상태 + 진행 사진**만 추가할 수 있습니다.
+- 서버 없이 **노션 데이터베이스만 먼저** 만들어 쓰셔도 됩니다 (1~4단계, 설치 필요 없음).
 
 ```
 등록 폼(/)  →  (면적 넣으면 견적서 자동 생성) →  노션 DB에 새 행 + 사진/견적서 첨부
@@ -48,34 +49,50 @@
 이 단계를 건너뛰면 아래 3단계에서 `404` 오류가 납니다. 노션은 **명시적으로 연결한
 페이지만** integration에 보여 줍니다.
 
-## 3단계 — 설치하고 DB 만들기
+## 3단계 — 노션에 데이터베이스 만들기 (설치 필요 없음)
+
+**맥이면 `notion-worklog` 폴더의 `노션DB만들기.command`를 더블클릭하세요.**
+터미널 창이 열리면 1단계의 토큰과 2단계의 페이지 URL을 붙여넣으면 끝입니다.
+맥에 들어 있는 `python3`만 쓰므로 따로 설치할 것이 없습니다.
+
+> 첫 실행 때 "확인되지 않은 개발자" 경고가 나오면 파일을 **우클릭 → 열기**로 한 번만 열어 주세요.
+
+터미널에서 직접 하거나 맥이 아니라면:
+
+```bash
+cd notion-worklog
+python3 setup_db.py                                        # 물어보면서 진행
+python3 setup_db.py --parent-page "<2단계의 페이지 URL>"     # 한 줄로
+```
+
+속성이 모두 갖춰진 `현장 업무` 데이터베이스가 만들어지고, 토큰과 DB ID를 `.env`에
+저장할지 물어봅니다(나중에 휴대폰 폼을 켤 때 필요합니다).
+
+이미 쓰고 있는 DB에 빠진 속성만 채워 넣을 수도 있습니다.
+
+```bash
+python3 setup_db.py --database "<기존 DB URL>"
+```
+
+## 4단계 — 노션에서 뷰와 공유 설정 (손으로)
+
+뷰는 노션 API로 만들 수 없어서 이것만 앱에서 직접 하시면 됩니다.
+[노션에서 보기 좋게 만들기](#노션에서-보기-좋게-만들기)를 보세요. 여기까지만 해도
+노션 앱에서 업무를 적고 사진·견적서를 올리며 팀과 공유할 수 있습니다.
+
+## 5단계 (선택) — 휴대폰 웹 폼 서버 켜기
+
+사진·견적서를 자동으로 올리고 견적서를 자동 생성하려면 서버를 띄웁니다.
 
 ```bash
 cd notion-worklog
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-cp .env.example .env      # NOTION_TOKEN 을 채워 넣습니다
-
-python setup_db.py --parent-page "<2단계에서 복사한 페이지 URL>"
-```
-
-`setup_db.py`가 속성이 모두 갖춰진 `현장 업무` 데이터베이스를 만들고
-`NOTION_DATABASE_ID=...`를 출력합니다. 그 줄을 `.env`에 넣으세요.
-
-이미 쓰고 있는 DB에 붙이고 싶으면 속성만 채워 넣을 수도 있습니다.
-
-```bash
-python setup_db.py --database "<기존 DB URL>"
-```
-
-## 4단계 — 서버 실행
-
-```bash
 uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
 브라우저에서 <http://localhost:8000> 을 열어 폼이 뜨는지 확인합니다.
+(3단계에서 `.env` 저장을 건너뛰었다면 `cp .env.example .env` 후 값을 채워 주세요.)
 
 ### 휴대폰에서 열기
 
@@ -158,7 +175,7 @@ python quote.py --고객 "탑동 881~8" --면적 10 --금액 1400000 -o 견적�
   견적서 PDF가 5MB를 넘으면 노션이 거부합니다(폼에 안내 문구가 뜹니다).
 - 아이폰 HEIC 사진은 브라우저가 JPEG로 바꿔 올립니다. 자바스크립트가 막힌 환경이라면
   `requirements.txt`의 `pillow-heif` 주석을 풀어 서버에서 변환하세요.
-- 속성 이름을 바꾸고 싶으면 `app.py` 위쪽의 `FIELD_*` 상수와 `setup_db.py`의 `SCHEMA`를
+- 속성 이름을 바꾸고 싶으면 `app.py` 위쪽의 `FIELD_*` 상수와 `notion_lite.py`의 `SCHEMA`를
   같이 고치면 됩니다. DB에 없는 속성은 자동으로 건너뛰므로 일부만 써도 동작합니다.
 - 사진 크기·용량 상한은 `.env`의 `WORKLOG_MAX_IMAGE_PX`, `WORKLOG_MAX_UPLOAD_MB`로 조정합니다.
 
@@ -171,11 +188,11 @@ python quote.py --고객 "탑동 881~8" --면적 10 --금액 1400000 -o 견적�
 | 사진이 첨부되지 않음 | 파일 하나가 5MB를 넘었을 수 있음(무료 플랜) |
 | 담당자 목록이 안 늘어난다 | 등록 후 5분 뒤 갱신됩니다(스키마 캐시). 서버를 다시 시작하면 즉시 반영 |
 | `한글 폰트를 찾지 못했습니다` | `sudo apt-get install fonts-nanum` 또는 `QUOTE_FONT`로 폰트 지정 |
-| 면적을 넣었는데 `면적` 칸이 비어 있다 | 예전에 만든 DB라면 `python setup_db.py --database <DB URL>`로 속성 추가 |
+| 면적을 넣었는데 `면적` 칸이 비어 있다 | 예전에 만든 DB라면 `python3 setup_db.py --database <DB URL>`로 속성 추가 |
 
 ## 테스트
 
-노션 API를 대신하는 가짜 서버로 등록·업로드·진행 업데이트 흐름을 검사합니다.
+노션 API를 대신하는 가짜 서버로 DB 생성·등록·업로드·견적서·진행 업데이트 흐름을 검사합니다.
 
 ```bash
 python3 -m unittest test_app -v
@@ -184,13 +201,15 @@ python3 -m unittest test_app -v
 ## 파일 구성
 
 ```
+노션DB만들기.command  맥에서 더블클릭하면 노션 DB를 만들어 주는 실행 파일
+setup_db.py        노션 DB 생성·속성 보정 (설치 없이 python3만으로 동작)
+notion_lite.py     표준 라이브러리만 쓰는 최소 노션 도구 + DB 속성 정의
 app.py             FastAPI 서버 (화면 + 업로드 처리)
 notion_api.py      노션 API 래퍼 (파일 업로드 3단계, 페이지/블록/DB)
 quote.py           견적서 PDF 생성기 (양식 좌표 + 금액 계산 + CLI)
 quote_config.json  회사 정보·품목 단가·특이사항 (여기만 고치면 됨)
 assets/seal.png    대표자 도장 (원본 견적서에서 추출)
-setup_db.py        노션 DB 생성·속성 보정 스크립트
 templates/         폼·목록·진행 업데이트·견적서 화면
 static/            모바일 CSS, 사진 축소·업로드 스크립트
-test_app.py        가짜 노션으로 돌리는 통합 테스트 (28개)
+test_app.py        가짜 노션으로 돌리는 통합 테스트 (33개)
 ```
