@@ -83,11 +83,13 @@
   <div class="field boxed">
     <span>견적서 자동 생성</span>
     <label class="inline">
-      <input name="area" type="text" inputmode="decimal" placeholder="면적">
+      <input name="area" type="text" inputmode="decimal" placeholder="평수"
+             data-pyeong="{{ per_pyeong }}">
       <em>{{ area_unit }}</em>
+      <em class="conv" data-pyeong-hint></em>
     </label>
     <p class="hint">
-      위에서 고른 작업항목의 단가로 계산해, 회사 양식 그대로 견적서 PDF를 만들어 노션에 첨부합니다.
+      위에서 고른 작업항목의 <b>평당 단가</b>로 계산해, 회사 양식 그대로 견적서 PDF를 만들어 노션에 첨부합니다.
       단가가 없는 항목이면 등록만 되고 안내가 뜹니다.
       <a href="/quote">견적서만 따로 만들기 →</a>
     </p>

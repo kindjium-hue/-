@@ -58,7 +58,7 @@ FIELD_ADDRESS = "주소"
 FIELD_PHONE = "연락처"
 FIELD_AMOUNT = "견적금액"  # DB에 있으면 채우고, 없으면 건너뛴다
 FIELD_QUOTE = "견적서"
-FIELD_AREA = "면적"
+FIELD_AREA = "평수"
 FIELD_WORK = "작업항목"
 FIELD_BEFORE = "BEFORE"
 FIELD_AFTER = "AFTER"
@@ -73,10 +73,9 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 _notion: na.Notion | None = None
 _schema_cache: dict[str, Any] = {"at": 0.0, "value": None}
 
-try:  # 화면 머리말에 쓰는 회사 이름
-    templates.env.globals["company_name"] = (
-        quotelib.load_config().get("회사", {}).get("상호명") or "현장 업무 기록"
-    )
+try:  # 화면 머리말에 쓰는 회사 이름 (브랜드 목록의 첫 번째)
+    _brands = quotelib.load_config().get("브랜드") or {}
+    templates.env.globals["company_name"] = next(iter(_brands), "") or "현장 업무 기록"
 except quotelib.QuoteError:
     templates.env.globals["company_name"] = "현장 업무 기록"
 
@@ -180,7 +179,8 @@ def parse_amount(raw: str) -> float | None:
 
 
 def parse_area(raw: str) -> float | None:
-    cleaned = (raw or "").replace(",", "").replace("㎡", "").replace("m2", "").strip()
+    """'51', '51평', '51 평' 같은 입력을 숫자로."""
+    cleaned = (raw or "").replace(",", "").replace("평", "").replace("㎡", "").replace("m2", "").strip()
     if not cleaned:
         return None
     try:
@@ -213,8 +213,15 @@ def build_pdf(
 
 
 def work_type_choices(db_schema: dict, config: dict) -> list[dict]:
-    """작업항목 목록. 단가가 등록된 항목만 견적서를 자동 생성할 수 있다."""
-    names = na.select_options(db_schema, FIELD_WORK) or FALLBACK_WORK_TYPES
+    """작업항목 목록. 노션 DB의 선택지와 설정 파일의 항목을 합친다.
+
+    노션은 없는 선택지를 보내면 알아서 만들어 주므로, 설정에만 있는 항목도
+    폼에서 고를 수 있게 둔다. 단가가 등록된 항목만 견적서가 자동 생성된다.
+    """
+    names = list(na.select_options(db_schema, FIELD_WORK) or FALLBACK_WORK_TYPES)
+    for name in quotelib.work_type_names(config):
+        if name not in names:
+            names.append(name)
     return [{"name": name, "priced": quotelib.has_prices(config, name)} for name in names]
 
 
@@ -279,8 +286,8 @@ def new_entry(request: Request):
             "owners": na.select_options(db_schema, FIELD_OWNER),
             "today": date.today().isoformat(),
             "db_url": db_schema.get("url", ""),
-            "area_unit": config.get("면적단위", "㎡"),
-            "company": config.get("회사", {}).get("상호명", ""),
+            "area_unit": config.get("면적단위", "평"),
+            "per_pyeong": config.get("평당제곱미터", 3.3058),
         },
     )
 
@@ -291,7 +298,7 @@ def quote_form(request: Request):
         return RedirectResponse("/gate?next=/quote", status_code=303)
 
     config = quotelib.load_config()
-    unit = config.get("면적단위", "㎡")
+    unit = config.get("면적단위", "평")
     groups = []
     for name, entry in quotelib.work_types(config).items():
         groups.append(
@@ -301,7 +308,7 @@ def quote_form(request: Request):
                     {
                         "name": row.get("품목", ""),
                         "price": f"{int(row.get('단가', 0)):,}",
-                        "basis": f"면적 1{unit}당"
+                        "basis": f"1{unit}당"
                         if isinstance(row.get("수량"), str)
                         else f"{row.get('수량', 1)}식",
                     }
@@ -315,9 +322,9 @@ def quote_form(request: Request):
         {
             "groups": groups,
             "area_unit": unit,
-            "default_work_type": config.get("공사명", ""),
+            "per_pyeong": config.get("평당제곱미터", 3.3058),
+            "default_work_type": config.get("기본작업항목", ""),
             "today": date.today().isoformat(),
-            "company": config.get("회사", {}).get("상호명", ""),
         },
     )
 

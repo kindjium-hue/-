@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""청명종합설비 견적서 자동 생성.
+"""견적서 자동 생성 (청명옥상방수 · 청명종합설비 · 뚜뚜베관케어).
 
-고객명과 면적만 넣으면 기존 견적서 양식(A4) 그대로 PDF를 만든다.
+고객명과 평수만 넣으면 회사 견적서 양식(A4) 그대로 PDF를 만든다.
 좌표·색·표 구조는 실제 견적서 PDF에서 그대로 뽑아 왔고,
-품목·단가·특이사항은 `quote_config.json`에서 고친다.
+작업항목별 브랜드·품목·단가·특이사항은 `quote_config.json`에서 고친다.
 
-    python quote.py --고객 "탑동 881~8" --면적 10
-    python quote.py --고객 "매탄동 현대아파트" --면적 24 --금액 1800000 -o 견적서.pdf
+    python quote.py --고객 "카카오프렌즈 지곡점" --평수 51 --항목 옥상방수
+    python quote.py --고객 "탑동 881~8" --평수 10 --항목 외벽방수 --금액 1400000
 """
 
 from __future__ import annotations
@@ -52,6 +52,7 @@ FINAL_TOP, FINAL_BOTTOM = 653.4, 689.1
 PROJECT_RIGHT = 154.5  # 공사명 열 오른쪽
 BODY_COLS = (154.5, 270.0, 328.9, 415.5, 497.3)  # 품목|수량|단가|금액|비고 경계
 ROW_HEIGHT = 36.2
+PROJECT_LINE_STEP = 29.3  # 공사명이 여러 줄일 때 줄 간격
 
 NOTE_TOP, NOTE_HEAD_BOTTOM, NOTE_BOTTOM = 699.7, 719.3, 793.2
 NOTE_FIRST_BASELINE = 733.0
@@ -115,11 +116,14 @@ class Item:
 @dataclass
 class Quote:
     customer: str
-    area: float
+    area: float  # 평수
     items: list[Item]
     quote_date: date
-    project: str  # 표 왼쪽 공사명 = 작업항목
+    project: str  # 표 왼쪽 공사명 (줄바꿈 가능)
+    work_type: str = ""
     notes: list[str] = field(default_factory=list)
+    company: dict = field(default_factory=dict)  # 작업항목별 상호·등록번호·주소
+    contact: dict = field(default_factory=dict)  # 담당·연락처·결제방법
     config: dict = field(repr=False, default_factory=dict)
     final_amount: int | None = None
 
@@ -178,6 +182,29 @@ def price_rows(config: dict, work_type: str) -> list[dict]:
     return list(rows)
 
 
+def company_for(config: dict, work_type: str) -> dict:
+    """작업항목에 걸린 브랜드의 사업자 정보. 옥상방수는 청명옥상방수, 배관은 뚜뚜베관케어."""
+    entry = work_types(config).get(work_type) or {}
+    brands = config.get("브랜드") or {}
+    name = entry.get("브랜드") or next(iter(brands), "")
+    return dict(brands.get(name) or {})
+
+
+def contact_for(config: dict, work_type: str) -> dict:
+    """담당·연락처·결제방법. 작업항목에 따로 적혀 있으면 그것을 쓴다."""
+    entry = work_types(config).get(work_type) or {}
+    return {
+        key: entry.get(key) or config.get(key, "")
+        for key in ("담당", "연락처", "결제방법")
+    }
+
+
+def project_name(config: dict, work_type: str) -> str:
+    """표 왼쪽에 찍을 공사명. 설정에 없으면 작업항목 이름 그대로."""
+    entry = work_types(config).get(work_type) or {}
+    return entry.get("공사명") or work_type
+
+
 def build_notes(config: dict, work_type: str) -> list[str]:
     """특이사항은 작업항목별로 두고, 없으면 공통 문구를 쓴다."""
     entry = work_types(config).get(work_type) or {}
@@ -186,13 +213,13 @@ def build_notes(config: dict, work_type: str) -> list[str]:
 
 def build_items(area: float, config: dict, work_type: str | None = None) -> list[Item]:
     """면적에 비례하는 항목과 고정 항목을 섞어 견적 항목을 만든다."""
-    work_type = work_type or config.get("공사명", "")
+    work_type = work_type or config.get("기본작업항목", "")
     items: list[Item] = []
     for row in price_rows(config, work_type):
         raw_quantity = row.get("수량", 1)
         if isinstance(raw_quantity, str):
-            if raw_quantity.strip() not in ("면적", "area"):
-                raise QuoteError(f"수량 값을 모르겠습니다: {raw_quantity!r} (숫자 또는 \"면적\")")
+            if raw_quantity.strip() not in ("평수", "면적", "area"):
+                raise QuoteError(f"수량 값을 모르겠습니다: {raw_quantity!r} (숫자 또는 \"평수\")")
             quantity = area
         else:
             quantity = float(raw_quantity)
@@ -225,17 +252,20 @@ def build_quote(
     if not customer:
         raise QuoteError("고객명(현장명)을 입력해 주세요.")
     if area <= 0:
-        raise QuoteError("면적은 0보다 커야 합니다.")
+        raise QuoteError("평수는 0보다 커야 합니다.")
 
     config = config or load_config()
-    work_type = (work_type or config.get("공사명", "")).strip()
+    work_type = (work_type or config.get("기본작업항목", "")).strip()
     return Quote(
         customer=customer,
         area=area,
         items=build_items(area, config, work_type),
         quote_date=quote_date or date.today(),
-        project=project or work_type,
+        project=project or project_name(config, work_type),
+        work_type=work_type,
         notes=build_notes(config, work_type),
+        company=company_for(config, work_type),
+        contact=contact_for(config, work_type),
         config=config,
         final_amount=final_amount,
     )
@@ -278,7 +308,7 @@ def date_text(day: date) -> str:
 
 
 def suggest_filename(quote: Quote) -> str:
-    company = quote.config.get("회사", {}).get("상호명", "견적서")
+    company = quote.company.get("상호명") or "견적서"
     customer = re.sub(r"[^\w가-힣().~-]+", "", quote.customer.replace(" ", ""))
     return f"견적서_{company}_{customer}_{quote.quote_date:%Y%m%d}.pdf"
 
@@ -384,7 +414,7 @@ def _draw_title(sheet: Sheet) -> None:
 
 
 def _draw_info(sheet: Sheet, quote: Quote) -> None:
-    company = quote.config.get("회사", {})
+    company = quote.company
 
     # 라벨 칸 배경
     sheet.fill(INFO_SPLIT, INFO_TOP, SUPPLIER_COLS[1], INFO_BOTTOM, HEADER_FILL)
@@ -486,9 +516,18 @@ def _draw_table(sheet: Sheet, quote: Quote) -> None:
         if item.note:
             sheet.cell(BODY_COLS[4], RIGHT, top, bottom, item.note, 9)
 
-    # 공사명(병합 칸)은 채워진 줄 가운데에 놓는다.
+    # 공사명(병합 칸)은 채워진 줄 가운데에 놓는다. 줄바꿈이 있으면 여러 줄로 쓴다.
     used_bottom = BODY_TOP + count * row_height
-    sheet.cell(LEFT, PROJECT_RIGHT, BODY_TOP, used_bottom, quote.project, 12, bold=True)
+    lines = [line.strip() for line in (quote.project or "").splitlines() if line.strip()]
+    if lines:
+        top = (BODY_TOP + used_bottom) / 2 - PROJECT_LINE_STEP * (len(lines) - 1) / 2
+        for index, line in enumerate(lines):
+            size = sheet.fit(line, 12, True, (PROJECT_RIGHT - LEFT) - 2 * PAD)
+            sheet.text(
+                (LEFT + PROJECT_RIGHT) / 2,
+                top + index * PROJECT_LINE_STEP + size * BASELINE_SHIFT,
+                line, size, bold=True, align="center",
+            )
 
     # 합계 / 최종 네고 금액
     sheet.fill(LEFT + 1, FINAL_TOP + 1, RIGHT - 1, FINAL_BOTTOM - 1, FINAL_FILL)
@@ -526,9 +565,9 @@ def _draw_footer(sheet: Sheet, quote: Quote) -> None:
         sheet.line(x, FOOT_TOP, x, FOOT_BOTTOM)
 
     values = (
-        "담당", quote.config.get("담당", ""),
-        "연 락 처", quote.config.get("연락처", ""),
-        "결제방법", quote.config.get("결제방법", ""),
+        "담당", quote.contact.get("담당", ""),
+        "연 락 처", quote.contact.get("연락처", ""),
+        "결제방법", quote.contact.get("결제방법", ""),
     )
     for index, text in enumerate(values):
         sheet.cell(FOOT_COLS[index], FOOT_COLS[index + 1], FOOT_TOP, FOOT_BOTTOM,
@@ -536,7 +575,7 @@ def _draw_footer(sheet: Sheet, quote: Quote) -> None:
 
 
 def _draw_seal(page: fitz.Page, quote: Quote) -> None:
-    seal = quote.config.get("회사", {}).get("도장")
+    seal = quote.company.get("도장")
     if not seal:
         return
     path = Path(seal)
@@ -587,13 +626,13 @@ def parse_amount(raw: str | None) -> int | None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="고객명과 면적만 넣으면 견적서 PDF를 만듭니다.",
+        description="고객명과 평수만 넣으면 견적서 PDF를 만듭니다.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--고객", "--customer", dest="customer", required=True,
                         help="고객명 또는 현장명 (예: 탑동 881~8)")
-    parser.add_argument("--면적", "--area", dest="area", type=float, required=True,
-                        help="시공 면적 (㎡)")
+    parser.add_argument("--평수", "--면적", "--area", dest="area", type=float, required=True,
+                        help="시공 평수 (평)")
     parser.add_argument("--금액", "--final", dest="final",
                         help="최종 네고 금액. 생략하면 합계 그대로")
     parser.add_argument("--할인", "--discount", dest="discount", type=float,
@@ -631,9 +670,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"실패: 값을 읽을 수 없습니다 ({error})", file=sys.stderr)
         return 1
 
+    unit = quote.config.get("면적단위", "평")
+    per_pyeong = float(quote.config.get("평당제곱미터", 3.3058))
     print(f"만들었습니다: {path}")
-    print(f"  면적 {quantity_text(quote.area)}{quote.config.get('면적단위', '㎡')}"
-          f" · 합계 {money(quote.subtotal)}원 · 청구 {money(quote.total)}원")
+    print(f"  {quote.work_type or quote.project} · {quantity_text(quote.area)}{unit}"
+          f" ({quote.area * per_pyeong:,.1f}㎡) · 합계 {money(quote.subtotal)}원"
+          f" · 청구 {money(quote.total)}원")
     return 0
 
 

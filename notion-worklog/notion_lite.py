@@ -46,7 +46,7 @@ SCHEMA = {
     "담당자": {"select": {"options": []}},
     "주소": {"rich_text": {}},
     "연락처": {"phone_number": {}},
-    "면적": {"number": {"format": "number"}},
+    "평수": {"number": {"format": "number"}},
     "견적서": {"files": {}},
     "BEFORE": {"files": {}},
     "AFTER": {"files": {}},

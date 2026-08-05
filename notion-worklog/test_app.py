@@ -42,7 +42,7 @@ DB_SCHEMA = {
         "담당자": {"type": "select", "select": {"options": [{"name": "김기사"}]}},
         "주소": {"type": "rich_text", "rich_text": {}},
         "연락처": {"type": "phone_number", "phone_number": {}},
-        "면적": {"type": "number", "number": {"format": "number"}},
+        "평수": {"type": "number", "number": {"format": "number"}},
         "견적서": {"type": "files", "files": {}},
         "BEFORE": {"type": "files", "files": {}},
         "AFTER": {"type": "files", "files": {}},
@@ -319,7 +319,7 @@ class SetupDbTest(unittest.TestCase):
         patched = [payload for method, path, payload in self.calls if method == "PATCH"]
         added = patched[0]["properties"]
         self.assertIn("진행상태", added)
-        self.assertIn("면적", added)
+        self.assertIn("평수", added)
         self.assertNotIn("주소", added)  # 이미 있음
         self.assertNotIn("현장명", added)  # title은 건드리지 않는다
 
@@ -352,20 +352,49 @@ class QuoteTest(unittest.TestCase):
         for value, expected in cases.items():
             self.assertEqual(quote.korean_amount(value), expected, value)
 
-    def test_items_follow_area(self):
-        items = quote.build_items(10, self.config)
+    def test_items_follow_pyeong(self):
+        items = quote.build_items(10, self.config, "외벽방수")
         by_name = {item.name: item for item in items}
-        self.assertEqual(by_name["크랙보수"].quantity, 10)
-        self.assertEqual(by_name["크랙보수"].amount, 250_000)
+        self.assertEqual(by_name["크랙보수"].quantity, 10)      # 평수가 수량이 된다
+        self.assertEqual(by_name["크랙보수"].amount, 250_000)     # 평당 25,000
         self.assertEqual(by_name["표면 방수제 도포"].amount, 300_000)
-        self.assertEqual(by_name["스카이 차량"].quantity, 1)  # 고정 항목
+        self.assertEqual(by_name["스카이 차량"].quantity, 1)      # 고정 항목
 
-        built = quote.build_quote("탑동 881~8", 10, config=self.config)
+        built = quote.build_quote("탑동 881~8", 10, work_type="외벽방수", config=self.config)
         self.assertEqual(built.subtotal, 1_650_000)
         self.assertEqual(built.total, 1_650_000)  # 네고 금액 없으면 합계 그대로
 
-        doubled = quote.build_quote("탑동 881~8", 20, config=self.config)
+        doubled = quote.build_quote("탑동 881~8", 20, work_type="외벽방수", config=self.config)
         self.assertEqual(doubled.subtotal, 1_650_000 + 550_000)
+
+    def test_roof_quote_matches_the_real_document(self):
+        """실제 견적서(카카오프렌즈 지곡점 51평)와 금액이 같아야 한다."""
+        built = quote.build_quote(
+            "카카오프렌즈 지곡점", 51, work_type="옥상방수",
+            final_amount=5_700_000, quote_date=date(2026, 8, 5), config=self.config,
+        )
+        self.assertEqual(built.subtotal, 6_010_000)
+        self.assertEqual(built.total, 5_700_000)
+        self.assertEqual(built.company["상호명"], "청명옥상방수")
+        self.assertEqual(built.company["등록번호"], "254-11-02805")
+        self.assertEqual(built.project, "옥상\n바닥 방수")
+
+        amounts = {item.name: item.amount for item in built.items}
+        self.assertEqual(amounts["바탕면작업"], 1_020_000)
+        self.assertEqual(amounts["중도 방수코트"], 1_530_000)
+        self.assertEqual(amounts["폐기물처리"], 200_000)
+
+    def test_brand_follows_work_type(self):
+        roof = quote.company_for(self.config, "옥상방수")
+        wall = quote.company_for(self.config, "외벽방수")
+        pipe = quote.company_for(self.config, "하수구막힘")
+        self.assertEqual(roof["상호명"], "청명옥상방수")
+        self.assertEqual(wall["상호명"], "청명종합설비")
+        self.assertEqual(pipe["상호명"], "뚜뚜베관케어")
+        self.assertEqual(pipe["종목"], "배관 및 냉.난방 공사업")
+        # 배관 쪽은 담당자도 다르다
+        self.assertEqual(quote.contact_for(self.config, "하수구막힘")["담당"], "윤병동")
+        self.assertEqual(quote.contact_for(self.config, "옥상방수")["담당"], "송경훈")
 
     def test_work_type_picks_its_own_price_table(self):
         built = quote.build_quote("탑동 881~8", 10, work_type="외벽방수", config=self.config)
@@ -400,13 +429,14 @@ class QuoteTest(unittest.TestCase):
         self.assertNotIn("* 공사명: 외벽 방수 공사", common)
 
     def test_final_amount_overrides_total(self):
-        built = quote.build_quote("탑동 881~8", 10, final_amount=1_400_000, config=self.config)
+        built = quote.build_quote("탑동 881~8", 10, work_type="외벽방수",
+                                  final_amount=1_400_000, config=self.config)
         self.assertEqual(built.subtotal, 1_650_000)
         self.assertEqual(built.total, 1_400_000)
 
     def test_pdf_contains_form_text(self):
         built = quote.build_quote(
-            "탑동 881~8", 10, final_amount=1_400_000,
+            "탑동 881~8", 10, work_type="외벽방수", final_amount=1_400_000,
             quote_date=date(2026, 7, 21), config=self.config,
         )
         pdf = quote.render_bytes(built)
@@ -426,20 +456,25 @@ class QuoteTest(unittest.TestCase):
         ):
             self.assertIn(expected, text, expected)
 
-    def test_filename(self):
-        built = quote.build_quote("탑동 881~8", 10, quote_date=date(2026, 8, 3), config=self.config)
+    def test_filename_uses_the_brand(self):
+        built = quote.build_quote("탑동 881~8", 10, work_type="외벽방수",
+                                  quote_date=date(2026, 8, 3), config=self.config)
         self.assertEqual(quote.suggest_filename(built), "견적서_청명종합설비_탑동881~8_20260803.pdf")
+        roof = quote.build_quote("카카오프렌즈 지곡점", 51, work_type="옥상방수",
+                                 quote_date=date(2026, 8, 5), config=self.config)
+        self.assertEqual(quote.suggest_filename(roof),
+                         "견적서_청명옥상방수_카카오프렌즈지곡점_20260805.pdf")
 
     def test_area_must_be_positive(self):
         with self.assertRaises(quote.QuoteError):
-            quote.build_quote("탑동", 0, config=self.config)
+            quote.build_quote("탑동", 0, work_type="외벽방수", config=self.config)
         with self.assertRaises(quote.QuoteError):
-            quote.build_quote("  ", 10, config=self.config)
+            quote.build_quote("  ", 10, work_type="외벽방수", config=self.config)
 
     def test_cli_writes_pdf(self):
         with tempfile.TemporaryDirectory() as folder:
             out = Path(folder) / "견적서.pdf"
-            code = quote.main(["--고객", "탑동 881~8", "--면적", "10", "-o", str(out)])
+            code = quote.main(["--고객", "카카오프렌즈 지곡점", "--평수", "51", "-o", str(out)])
             self.assertEqual(code, 0)
             self.assertTrue(out.exists() and out.stat().st_size > 5000)
 
@@ -447,7 +482,8 @@ class QuoteTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             out = Path(folder) / "q.pdf"
             self.assertEqual(
-                quote.main(["--고객", "탑동", "--면적", "10", "--할인", "15", "-o", str(out)]), 0
+                quote.main(["--고객", "탑동", "--평수", "10", "--항목", "외벽방수",
+                            "--할인", "15", "-o", str(out)]), 0
             )
             with fitz.open(out) as document:
                 # 1,650,000의 15% 할인 → 1,402,500 → 만원 단위 내림
@@ -469,6 +505,7 @@ class QuoteWebTest(unittest.TestCase):
         self.assertIn("견적서 만들기", response.text)
         self.assertIn("크랙보수", response.text)
         self.assertIn("25,000원", response.text)
+        self.assertIn("바탕면작업", response.text)  # 옥상방수 단가표
         for name in ("누수탐지", "누수피해복구", "하수구막힘", "옥상방수", "외벽방수", "기타"):
             self.assertIn(name, response.text)
         self.assertIn("단가 미등록", response.text)
@@ -480,10 +517,14 @@ class QuoteWebTest(unittest.TestCase):
         self.assertIn("누수탐지", response.text)
         self.assertIn("BEFORE", response.text)
         self.assertIn("AFTER", response.text)
+        # 노션 DB 선택지에 없어도 설정에 있으면 고를 수 있어야 한다
+        self.assertNotIn("옥상방수", [o["name"] for o in DB_SCHEMA["properties"]["작업항목"]["select"]["options"]])
+        self.assertIn("옥상방수", response.text)
 
     def test_quote_api_returns_pdf(self):
         response = self.client.post(
-            "/api/quote", data={"customer": "탑동 881~8", "area": "10 ㎡"}
+            "/api/quote",
+            data={"customer": "탑동 881~8", "area": "10 평", "work_type": "외벽방수"},
         )
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.headers["content-type"], "application/pdf")
@@ -493,19 +534,21 @@ class QuoteWebTest(unittest.TestCase):
             self.assertIn("탑동 881~8 귀중", document[0].get_text())
 
     def test_quote_api_rejects_bad_area(self):
-        response = self.client.post("/api/quote", data={"customer": "탑동", "area": "넓음"})
+        response = self.client.post(
+            "/api/quote", data={"customer": "탑동", "area": "넓음", "work_type": "외벽방수"}
+        )
         self.assertEqual(response.status_code, 400)
 
     def test_entry_attaches_generated_quote(self):
         response = self.client.post(
             "/api/entries",
-            data={"title": "탑동 881~8", "status": "예정", "area": "10"},
+            data={"title": "탑동 881~8", "work_type": "외벽방수", "status": "예정", "area": "10"},
         )
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json()["warning"], "")
 
         properties = self.fake.created_page()["properties"]
-        self.assertEqual(properties["면적"]["number"], 10)
+        self.assertEqual(properties["평수"]["number"], 10)
         self.assertEqual(len(properties["견적서"]["files"]), 1)
         self.assertTrue(properties["견적서"]["files"][0]["name"].endswith(".pdf"))
 
@@ -515,7 +558,8 @@ class QuoteWebTest(unittest.TestCase):
     def test_manual_amount_goes_into_the_pdf(self):
         response = self.client.post(
             "/api/entries",
-            data={"title": "탑동 881~8", "area": "10", "amount": "1,400,000"},
+            data={"title": "탑동 881~8", "work_type": "외벽방수",
+                  "area": "10", "amount": "1,400,000"},
         )
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(len(self.fake.created_page()["properties"]["견적서"]["files"]), 1)
@@ -551,7 +595,7 @@ class QuoteWebTest(unittest.TestCase):
         self.assertIn("누수탐지", response.json()["warning"])
 
         properties = self.fake.created_page()["properties"]
-        self.assertEqual(properties["면적"]["number"], 5)
+        self.assertEqual(properties["평수"]["number"], 5)
         self.assertNotIn("견적서", properties)  # 견적서는 못 만들었지만 등록은 됐다
 
     def test_work_type_becomes_the_project_on_the_pdf(self):
@@ -605,7 +649,7 @@ class QuoteWebTest(unittest.TestCase):
         self.client.post("/api/entries", data={"title": "면적 없음"})
         properties = self.fake.created_page()["properties"]
         self.assertNotIn("견적서", properties)
-        self.assertNotIn("면적", properties)
+        self.assertNotIn("평수", properties)
 
 
 class AccessCodeTest(unittest.TestCase):

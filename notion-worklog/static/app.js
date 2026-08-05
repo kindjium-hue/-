@@ -5,16 +5,35 @@ const RESIZE_THRESHOLD = 1_200_000; // 이보다 작은 사진은 그대로 보�
 const JPEG_QUALITY = 0.85;
 
 document.addEventListener("DOMContentLoaded", () => {
+  bindPyeongHint(document);  // 견적서 화면처럼 일반 폼에도 환산값을 보여 준다
+
   const form = document.getElementById("worklog-form");
   if (!form || !form.dataset.endpoint) return;
 
   bindFileLists(form);
+  bindPyeongHint(form);
   bindResultActions();
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     submitForm(form);
   });
 });
+
+/* ------------------------------------------------------------ 평수 → ㎡ 환산 */
+
+function bindPyeongHint(scope) {
+  scope.querySelectorAll("input[data-pyeong]").forEach((input) => {
+    const hint = input.parentElement?.querySelector("[data-pyeong-hint]");
+    if (!hint) return;
+    const ratio = parseFloat(input.dataset.pyeong) || 3.3058;
+    const show = () => {
+      const pyeong = parseFloat(String(input.value).replace(/[^\d.]/g, ""));
+      hint.textContent = pyeong > 0 ? `≈ ${(pyeong * ratio).toFixed(1)}㎡` : "";
+    };
+    input.addEventListener("input", show);
+    show();
+  });
+}
 
 /* ---------------------------------------------------------------- 파일 목록 */
 

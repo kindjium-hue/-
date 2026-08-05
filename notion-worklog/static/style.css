@@ -147,6 +147,7 @@ input:focus, select:focus, textarea:focus {
 
 .inline { display: flex; align-items: center; gap: 8px; }
 .inline em { font-style: normal; color: var(--muted); font-weight: 600; flex: none; }
+.inline em.conv { font-weight: 400; font-size: 13px; }
 
 .ba { display: flex; gap: 10px; margin-top: 10px; }
 .ba-slot { flex: 1; min-width: 0; }

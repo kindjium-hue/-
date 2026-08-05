@@ -5,7 +5,7 @@
 {% block content %}
 <form class="card" method="post" action="/api/quote">
   <h1>견적서 만들기</h1>
-  <p class="hint">고객명과 면적만 넣으면 회사 견적서 양식 그대로 PDF가 내려옵니다. 그대로 카톡으로 보내면 됩니다.</p>
+  <p class="hint">작업항목을 고르고 고객명·평수만 넣으면 회사 견적서 양식 그대로 PDF가 내려옵니다. 그대로 카톡으로 보내면 됩니다.</p>
 
   <label class="field">
     <span>고객명 · 현장명 <b class="req">*</b></span>
@@ -26,10 +26,12 @@
   </label>
 
   <label class="field">
-    <span>면적 <b class="req">*</b></span>
+    <span>평수 <b class="req">*</b></span>
     <div class="inline">
-      <input name="area" type="text" inputmode="decimal" required placeholder="10" autocomplete="off">
+      <input name="area" type="text" inputmode="decimal" required placeholder="51" autocomplete="off"
+             data-pyeong="{{ per_pyeong }}">
       <em>{{ area_unit }}</em>
+      <em class="conv" data-pyeong-hint></em>
     </div>
   </label>
 
