@@ -368,6 +368,8 @@ class QuoteTest(unittest.TestCase):
         )
         pdf = quote.render_bytes(built)
         self.assertTrue(pdf.startswith(b"%PDF"))
+        # 폰트를 잘라내지 않으면 3MB가 넘어 노션 무료 플랜에 부담이 된다.
+        self.assertLess(len(pdf), 500_000, f"PDF가 너무 큽니다: {len(pdf):,} bytes")
 
         with fitz.open(stream=pdf, filetype="pdf") as document:
             self.assertEqual(document.page_count, 1)

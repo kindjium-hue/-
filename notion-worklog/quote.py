@@ -508,7 +508,13 @@ def _draw_seal(page: fitz.Page, quote: Quote) -> None:
 def render_bytes(quote: Quote) -> bytes:
     document = render_document(quote)
     try:
-        return document.tobytes(garbage=3, deflate=True)
+        try:
+            # 쓴 글자만 남기고 폰트를 잘라낸다. 한글 폰트를 통째로 넣으면 3MB가 넘어
+            # 노션 무료 플랜(파일당 5MB)에 부담이 된다. 이걸 거치면 100KB 안쪽.
+            document.subset_fonts(verbose=False)
+        except Exception:  # 폰트 잘라내기를 못 하는 버전이면 그대로 저장한다
+            pass
+        return document.tobytes(garbage=4, deflate=True, deflate_fonts=True)
     finally:
         document.close()
 
