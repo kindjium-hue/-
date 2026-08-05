@@ -29,16 +29,27 @@ STATUS_OPTIONS = [
     {"name": "보류", "color": "red"},
 ]
 
+WORK_TYPE_OPTIONS = [
+    {"name": "누수탐지", "color": "purple"},
+    {"name": "누수피해복구", "color": "pink"},
+    {"name": "하수구막힘", "color": "brown"},
+    {"name": "옥상방수", "color": "blue"},
+    {"name": "외벽방수", "color": "green"},
+    {"name": "기타", "color": "default"},
+]
+
 SCHEMA = {
     "현장명": {"title": {}},
+    "작업항목": {"select": {"options": WORK_TYPE_OPTIONS}},
     "진행상태": {"select": {"options": STATUS_OPTIONS}},
     "작업일": {"date": {}},
     "담당자": {"select": {"options": []}},
     "주소": {"rich_text": {}},
     "연락처": {"phone_number": {}},
     "면적": {"number": {"format": "number"}},
-    "견적금액": {"number": {"format": "won"}},
     "견적서": {"files": {}},
+    "BEFORE": {"files": {}},
+    "AFTER": {"files": {}},
     "등록시각": {"created_time": {}},
 }
 

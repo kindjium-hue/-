@@ -168,7 +168,8 @@ async function buildFormData(form) {
   for (const element of form.elements) {
     if (!element.name || element.disabled) continue;
     if (element.type === "file") {
-      const asImage = element.name === "photos";
+      // data-image 가 붙은 칸(사진)만 브라우저에서 미리 줄인다.
+      const asImage = element.dataset.image !== undefined;
       for (const file of element.files) {
         data.append(element.name, asImage ? await shrinkImage(file) : file);
       }

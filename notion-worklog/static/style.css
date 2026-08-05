@@ -148,6 +148,29 @@ input:focus, select:focus, textarea:focus {
 .inline { display: flex; align-items: center; gap: 8px; }
 .inline em { font-style: normal; color: var(--muted); font-weight: 600; flex: none; }
 
+.ba { display: flex; gap: 10px; margin-top: 10px; }
+.ba-slot { flex: 1; min-width: 0; }
+.ba-tag {
+  display: block;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  margin-bottom: 6px;
+  color: var(--muted);
+}
+.ba-tag.before { color: #a4703c; }
+.ba-tag.after { color: #2f8a54; }
+@media (prefers-color-scheme: dark) {
+  .ba-tag.before { color: #d9a86a; }
+  .ba-tag.after { color: #6fc793; }
+}
+.ba .picker-face { min-height: 64px; font-size: 14px; text-align: center; padding: 0 8px; }
+.ba .filelist li { padding: 6px; gap: 6px; font-size: 13px; }
+.ba .filelist img { width: 34px; height: 34px; }
+.ba .filelist .size { display: none; }
+
+.group { font-size: 15px; margin: 18px 0 0; }
 .more { margin-bottom: 16px; }
 .more summary {
   cursor: pointer;

@@ -25,6 +25,7 @@
           {% if entry.status %}<span class="badge">{{ entry.status }}</span>{% endif %}
         </div>
         <div class="entry-meta">
+          {% if entry.work %}<span>{{ entry.work }}</span>{% endif %}
           {% if entry.date %}<span>{{ entry.date }}</span>{% endif %}
           {% if entry.owner %}<span>{{ entry.owner }}</span>{% endif %}
           {% if entry.address %}<span>{{ entry.address }}</span>{% endif %}

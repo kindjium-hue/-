@@ -118,7 +118,8 @@ class Quote:
     area: float
     items: list[Item]
     quote_date: date
-    project: str
+    project: str  # 표 왼쪽 공사명 = 작업항목
+    notes: list[str] = field(default_factory=list)
     config: dict = field(repr=False, default_factory=dict)
     final_amount: int | None = None
 
@@ -143,10 +144,51 @@ def load_config(path: str | Path | None = None) -> dict:
         return json.load(handle)
 
 
-def build_items(area: float, config: dict) -> list[Item]:
+def work_types(config: dict) -> dict[str, dict]:
+    """작업항목 이름 → {품목, 특이사항} 매핑."""
+    return config.get("작업항목") or {}
+
+
+def work_type_names(config: dict) -> list[str]:
+    return list(work_types(config))
+
+
+def has_prices(config: dict, name: str) -> bool:
+    """그 작업항목에 단가가 등록되어 있는지. 없으면 견적서를 만들 수 없다."""
+    return bool((work_types(config).get(name) or {}).get("품목"))
+
+
+def price_rows(config: dict, work_type: str) -> list[dict]:
+    table = work_types(config)
+    if not table:  # 예전 형식(작업항목 구분 없이 품목만 있는 설정)
+        return list(config.get("품목") or [])
+
+    entry = table.get(work_type)
+    if entry is None:
+        raise QuoteError(
+            f"'{work_type}'은 등록된 작업항목이 아닙니다. "
+            f"쓸 수 있는 항목: {', '.join(table) or '(없음)'}"
+        )
+    rows = entry.get("품목") or []
+    if not rows:
+        raise QuoteError(
+            f"'{work_type}' 작업항목의 단가가 아직 등록되지 않았습니다. "
+            f"quote_config.json의 작업항목 → {work_type} → 품목에 단가를 넣어 주세요."
+        )
+    return list(rows)
+
+
+def build_notes(config: dict, work_type: str) -> list[str]:
+    """특이사항은 작업항목별로 두고, 없으면 공통 문구를 쓴다."""
+    entry = work_types(config).get(work_type) or {}
+    return list(entry.get("특이사항") or config.get("특이사항") or [])
+
+
+def build_items(area: float, config: dict, work_type: str | None = None) -> list[Item]:
     """면적에 비례하는 항목과 고정 항목을 섞어 견적 항목을 만든다."""
+    work_type = work_type or config.get("공사명", "")
     items: list[Item] = []
-    for row in config.get("품목", []):
+    for row in price_rows(config, work_type):
         raw_quantity = row.get("수량", 1)
         if isinstance(raw_quantity, str):
             if raw_quantity.strip() not in ("면적", "area"):
@@ -173,6 +215,7 @@ def build_quote(
     customer: str,
     area: float,
     *,
+    work_type: str | None = None,
     final_amount: int | None = None,
     quote_date: date | None = None,
     project: str | None = None,
@@ -185,12 +228,14 @@ def build_quote(
         raise QuoteError("면적은 0보다 커야 합니다.")
 
     config = config or load_config()
+    work_type = (work_type or config.get("공사명", "")).strip()
     return Quote(
         customer=customer,
         area=area,
-        items=build_items(area, config),
+        items=build_items(area, config, work_type),
         quote_date=quote_date or date.today(),
-        project=project or config.get("공사명", ""),
+        project=project or work_type,
+        notes=build_notes(config, work_type),
         config=config,
         final_amount=final_amount,
     )
@@ -466,7 +511,7 @@ def _draw_notes(sheet: Sheet, quote: Quote) -> None:
     sheet.line(LEFT, NOTE_HEAD_BOTTOM, RIGHT, NOTE_HEAD_BOTTOM, THIN_WIDTH, GRAY)
     sheet.cell(LEFT, RIGHT, NOTE_TOP, NOTE_HEAD_BOTTOM, "특    이    사    항", 11, bold=True)
 
-    lines = list(quote.config.get("특이사항", []))
+    lines = list(quote.notes)
     room = int((NOTE_BOTTOM - NOTE_FIRST_BASELINE) // NOTE_STEP) + 1
     for index, line in enumerate(lines[:room]):
         size = sheet.fit(line, 11, True, RIGHT - NOTE_INDENT - PAD)
@@ -554,7 +599,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--할인", "--discount", dest="discount", type=float,
                         help="합계에서 깎을 비율(%%). 예: 15 → 15%% 할인, 만원 단위 내림")
     parser.add_argument("--날짜", "--date", dest="day", help="견적일 (YYYY-MM-DD, 기본 오늘)")
-    parser.add_argument("--공사명", dest="project", help="표 왼쪽 공사명 (기본 설정값)")
+    parser.add_argument("--항목", "--worktype", dest="work_type",
+                        help="작업항목 (누수탐지·누수피해복구·하수구막힘·옥상방수·외벽방수·기타)")
+    parser.add_argument("--공사명", dest="project", help="표 왼쪽에 찍을 이름 (기본 작업항목)")
     parser.add_argument("--설정", dest="config", help="설정 파일 경로 (기본 quote_config.json)")
     parser.add_argument("-o", "--out", dest="out", help="저장할 PDF 경로")
     args = parser.parse_args(argv)
@@ -565,6 +612,7 @@ def main(argv: list[str] | None = None) -> int:
         quote = build_quote(
             args.customer,
             args.area,
+            work_type=args.work_type,
             final_amount=parse_amount(args.final),
             quote_date=day,
             project=args.project,

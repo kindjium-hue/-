@@ -6,6 +6,7 @@
 <form class="card" id="worklog-form" data-endpoint="/api/entries/{{ page_id }}/progress" novalidate>
   <h1>{{ title }}</h1>
   <p class="meta">
+    {% if work_type %}<span>{{ work_type }}</span>{% endif %}
     {% if work_date %}<span>{{ work_date }}</span>{% endif %}
     {% if address %}<span>{{ address }}</span>{% endif %}
     {% if current_status %}<span class="badge">{{ current_status }}</span>{% endif %}
@@ -37,10 +38,26 @@
   <div class="field">
     <span>진행 사진</span>
     <label class="picker">
-      <input name="photos" type="file" accept="image/*" multiple>
+      <input name="photos" type="file" accept="image/*" multiple data-image>
       <span class="picker-face">사진 찍기 / 앨범에서 고르기</span>
     </label>
     <ul class="filelist" data-for="photos"></ul>
+  </div>
+
+  <div class="field boxed">
+    <span>AFTER 사진 (시공 후)</span>
+    <label class="picker">
+      <input name="after_photos" type="file" accept="image/*" multiple data-image>
+      <span class="picker-face">시공 후 사진</span>
+    </label>
+    <ul class="filelist" data-for="after_photos"></ul>
+    <p class="hint">
+      {% if after_filled %}
+      이 현장은 <code>AFTER</code> 칸이 이미 채워져 있어, 올리시는 사진은 본문에 덧붙습니다.
+      {% else %}
+      노션의 <code>AFTER</code> 칸에 들어갑니다.
+      {% endif %}
+    </p>
   </div>
 
   <div class="progress" hidden><div class="bar"></div><span class="progress-label">업로드 중…</span></div>

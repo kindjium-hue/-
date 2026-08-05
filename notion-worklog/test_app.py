@@ -43,8 +43,13 @@ DB_SCHEMA = {
         "주소": {"type": "rich_text", "rich_text": {}},
         "연락처": {"type": "phone_number", "phone_number": {}},
         "면적": {"type": "number", "number": {"format": "number"}},
-        "견적금액": {"type": "number", "number": {"format": "won"}},
         "견적서": {"type": "files", "files": {}},
+        "BEFORE": {"type": "files", "files": {}},
+        "AFTER": {"type": "files", "files": {}},
+        "작업항목": {
+            "type": "select",
+            "select": {"options": [{"name": "외벽방수"}, {"name": "누수탐지"}, {"name": "기타"}]},
+        },
     },
 }
 
@@ -66,6 +71,7 @@ class FakeNotion:
 
     def __init__(self):
         self.calls: list[tuple[str, str, dict]] = []
+        self.page = json.loads(json.dumps(PAGE))  # 테스트에서 바꿔 쓸 수 있게 복사
         self.client = na.Notion("test-token")
         self.client._http = httpx.Client(
             base_url=na.API_BASE,
@@ -91,7 +97,7 @@ class FakeNotion:
         if request.method == "POST" and path == "/v1/pages":
             return httpx.Response(200, json={**PAGE, "properties": body.get("properties", {})})
         if path.startswith("/v1/pages/"):
-            return httpx.Response(200, json=PAGE)
+            return httpx.Response(200, json=self.page)
         if path.startswith("/v1/blocks/"):
             return httpx.Response(200, json={"results": []})
         return httpx.Response(404, json={"message": f"경로 없음: {path}"})
@@ -159,7 +165,6 @@ class WorklogTest(unittest.TestCase):
         self.assertEqual(properties["작업일"]["date"], {"start": "2026-08-05", "end": "2026-08-06"})
         self.assertEqual(properties["담당자"]["select"]["name"], "박사장")
         self.assertEqual(properties["연락처"]["phone_number"], "010-1234-5678")
-        self.assertEqual(properties["견적금액"]["number"], 1200000)
         self.assertEqual(properties["견적서"]["files"][0]["type"], "file_upload")
 
         children = self.fake.created_page()["children"]
@@ -273,14 +278,20 @@ class SetupDbTest(unittest.TestCase):
 
     def test_schema_covers_every_field_the_form_writes(self):
         for name in (
-            worklog.FIELD_TITLE, worklog.FIELD_STATUS, worklog.FIELD_DATE, worklog.FIELD_OWNER,
-            worklog.FIELD_ADDRESS, worklog.FIELD_PHONE, worklog.FIELD_AREA,
-            worklog.FIELD_AMOUNT, worklog.FIELD_QUOTE,
+            worklog.FIELD_TITLE, worklog.FIELD_WORK, worklog.FIELD_STATUS, worklog.FIELD_DATE,
+            worklog.FIELD_OWNER, worklog.FIELD_ADDRESS, worklog.FIELD_PHONE, worklog.FIELD_AREA,
+            worklog.FIELD_QUOTE, worklog.FIELD_BEFORE, worklog.FIELD_AFTER,
         ):
             self.assertIn(name, notion_lite.SCHEMA, name)
         self.assertEqual(notion_lite.SCHEMA[worklog.FIELD_TITLE], {"title": {}})
         statuses = [o["name"] for o in notion_lite.SCHEMA["진행상태"]["select"]["options"]]
         self.assertEqual(statuses, ["접수", "견적", "예정", "진행중", "완료", "보류"])
+        works = [o["name"] for o in notion_lite.SCHEMA["작업항목"]["select"]["options"]]
+        self.assertEqual(
+            works,
+            ["누수탐지", "누수피해복구", "하수구막힘", "옥상방수", "외벽방수", "기타"],
+        )
+        self.assertNotIn("견적금액", notion_lite.SCHEMA)  # 작업항목으로 대체했다
 
     def test_create_sends_schema_and_saves_env(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -356,6 +367,38 @@ class QuoteTest(unittest.TestCase):
         doubled = quote.build_quote("탑동 881~8", 20, config=self.config)
         self.assertEqual(doubled.subtotal, 1_650_000 + 550_000)
 
+    def test_work_type_picks_its_own_price_table(self):
+        built = quote.build_quote("탑동 881~8", 10, work_type="외벽방수", config=self.config)
+        self.assertEqual(built.project, "외벽방수")
+        self.assertEqual(built.subtotal, 1_650_000)
+
+        # 단가를 아직 안 넣은 항목은 견적서를 만들지 않고 안내한다
+        with self.assertRaises(quote.QuoteError) as caught:
+            quote.build_quote("매탄동 상가", 5, work_type="누수탐지", config=self.config)
+        self.assertIn("누수탐지", str(caught.exception))
+        self.assertIn("단가", str(caught.exception))
+
+        # 없는 항목 이름이면 쓸 수 있는 목록을 알려 준다
+        with self.assertRaises(quote.QuoteError) as caught:
+            quote.build_quote("테스트", 5, work_type="배관교체", config=self.config)
+        self.assertIn("외벽방수", str(caught.exception))
+
+    def test_work_type_list_and_price_availability(self):
+        self.assertEqual(
+            quote.work_type_names(self.config),
+            ["누수탐지", "누수피해복구", "하수구막힘", "옥상방수", "외벽방수", "기타"],
+        )
+        self.assertTrue(quote.has_prices(self.config, "외벽방수"))
+        self.assertFalse(quote.has_prices(self.config, "누수탐지"))
+        self.assertFalse(quote.has_prices(self.config, "없는항목"))
+
+    def test_notes_come_from_work_type_then_fall_back(self):
+        outer = quote.build_notes(self.config, "외벽방수")
+        self.assertIn("* 공사명: 외벽 방수 공사", outer)
+        common = quote.build_notes(self.config, "누수탐지")
+        self.assertEqual(common, self.config["특이사항"])
+        self.assertNotIn("* 공사명: 외벽 방수 공사", common)
+
     def test_final_amount_overrides_total(self):
         built = quote.build_quote("탑동 881~8", 10, final_amount=1_400_000, config=self.config)
         self.assertEqual(built.subtotal, 1_650_000)
@@ -420,12 +463,23 @@ class QuoteWebTest(unittest.TestCase):
         worklog._schema_cache["value"] = None
         self.client = TestClient(worklog.app)
 
-    def test_quote_page_lists_prices(self):
+    def test_quote_page_lists_work_types_and_prices(self):
         response = self.client.get("/quote")
         self.assertEqual(response.status_code, 200)
         self.assertIn("견적서 만들기", response.text)
         self.assertIn("크랙보수", response.text)
         self.assertIn("25,000원", response.text)
+        for name in ("누수탐지", "누수피해복구", "하수구막힘", "옥상방수", "외벽방수", "기타"):
+            self.assertIn(name, response.text)
+        self.assertIn("단가 미등록", response.text)
+
+    def test_entry_form_lists_work_types(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("작업항목", response.text)
+        self.assertIn("누수탐지", response.text)
+        self.assertIn("BEFORE", response.text)
+        self.assertIn("AFTER", response.text)
 
     def test_quote_api_returns_pdf(self):
         response = self.client.post(
@@ -452,21 +506,100 @@ class QuoteWebTest(unittest.TestCase):
 
         properties = self.fake.created_page()["properties"]
         self.assertEqual(properties["면적"]["number"], 10)
-        # 견적금액을 비워 두면 계산된 합계가 들어간다
-        self.assertEqual(properties["견적금액"]["number"], 1_650_000)
         self.assertEqual(len(properties["견적서"]["files"]), 1)
         self.assertTrue(properties["견적서"]["files"][0]["name"].endswith(".pdf"))
 
         uploaded = [body for method, path, body in self.fake.calls if path == "/v1/file_uploads"]
         self.assertEqual(uploaded[0]["content_type"], "application/pdf")
 
-    def test_entry_keeps_manual_amount(self):
-        self.client.post(
+    def test_manual_amount_goes_into_the_pdf(self):
+        response = self.client.post(
             "/api/entries",
             data={"title": "탑동 881~8", "area": "10", "amount": "1,400,000"},
         )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(len(self.fake.created_page()["properties"]["견적서"]["files"]), 1)
+
+    def test_entry_saves_work_type_and_before_after(self):
+        response = self.client.post(
+            "/api/entries",
+            data={"title": "옥상 누수", "work_type": "누수탐지", "status": "접수"},
+            files=[
+                ("before_photos", ("전.jpg", photo_bytes((1600, 1200)), "image/jpeg")),
+                ("after_photos", ("후.jpg", photo_bytes((1600, 1200)), "image/jpeg")),
+            ],
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+
         properties = self.fake.created_page()["properties"]
-        self.assertEqual(properties["견적금액"]["number"], 1_400_000)
+        self.assertEqual(properties["작업항목"]["select"]["name"], "누수탐지")
+        self.assertEqual(len(properties["BEFORE"]["files"]), 1)
+        self.assertEqual(len(properties["AFTER"]["files"]), 1)
+        self.assertEqual(properties["BEFORE"]["files"][0]["type"], "file_upload")
+        # 서로 다른 업로드로 올라가야 한다 (노션은 업로드 하나를 한 곳에만 붙일 수 있다)
+        self.assertNotEqual(
+            properties["BEFORE"]["files"][0]["file_upload"]["id"],
+            properties["AFTER"]["files"][0]["file_upload"]["id"],
+        )
+
+    def test_unpriced_work_type_warns_but_still_registers(self):
+        response = self.client.post(
+            "/api/entries",
+            data={"title": "매탄동 상가 누수", "work_type": "누수탐지", "area": "5"},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertIn("누수탐지", response.json()["warning"])
+
+        properties = self.fake.created_page()["properties"]
+        self.assertEqual(properties["면적"]["number"], 5)
+        self.assertNotIn("견적서", properties)  # 견적서는 못 만들었지만 등록은 됐다
+
+    def test_work_type_becomes_the_project_on_the_pdf(self):
+        response = self.client.post(
+            "/api/entries",
+            data={"title": "탑동 881~8", "work_type": "외벽방수", "area": "10"},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["warning"], "")
+        name = self.fake.created_page()["properties"]["견적서"]["files"][0]["name"]
+        self.assertTrue(name.endswith(".pdf"))
+
+    def test_progress_fills_after_when_empty(self):
+        response = self.client.post(
+            f"/api/entries/{'p' * 32}/progress",
+            data={"status": "완료"},
+            files=[("after_photos", ("완료.jpg", photo_bytes((1200, 900)), "image/jpeg"))],
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+
+        patched = [body for method, path, body in self.fake.calls
+                   if method == "PATCH" and path.startswith("/v1/pages/")]
+        self.assertEqual(len(patched[0]["properties"]["AFTER"]["files"]), 1)
+        self.assertNotIn("AFTER", [
+            "".join(part["text"]["content"] for part in block["heading_3"]["rich_text"])
+            for block in self.fake.appended_blocks() if block["type"] == "heading_3"
+        ][1:])  # 속성에 넣었으니 본문에 AFTER 제목을 또 만들지 않는다
+
+    def test_progress_keeps_existing_after_photos(self):
+        self.fake.page["properties"]["AFTER"] = {
+            "type": "files",
+            "files": [{"type": "file", "name": "먼저.jpg", "file": {"url": "https://x/1.jpg"}}],
+        }
+        response = self.client.post(
+            f"/api/entries/{'p' * 32}/progress",
+            data={"memo": "추가 사진"},
+            files=[("after_photos", ("추가.jpg", photo_bytes((1200, 900)), "image/jpeg"))],
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+
+        patched = [body for method, path, body in self.fake.calls
+                   if method == "PATCH" and path.startswith("/v1/pages/")]
+        self.assertEqual(patched, [])  # 기존 사진을 덮어쓰지 않는다
+        headings = [
+            "".join(part["text"]["content"] for part in block["heading_3"]["rich_text"])
+            for block in self.fake.appended_blocks() if block["type"] == "heading_3"
+        ]
+        self.assertIn("AFTER", headings)  # 대신 본문에 붙는다
 
     def test_entry_without_area_generates_nothing(self):
         self.client.post("/api/entries", data={"title": "면적 없음"})

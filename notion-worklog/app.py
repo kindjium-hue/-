@@ -29,6 +29,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 import notion_api as na
+import notion_lite as nl
 import quote as quotelib
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -55,11 +56,15 @@ FIELD_DATE = "작업일"
 FIELD_OWNER = "담당자"
 FIELD_ADDRESS = "주소"
 FIELD_PHONE = "연락처"
-FIELD_AMOUNT = "견적금액"
+FIELD_AMOUNT = "견적금액"  # DB에 있으면 채우고, 없으면 건너뛴다
 FIELD_QUOTE = "견적서"
 FIELD_AREA = "면적"
+FIELD_WORK = "작업항목"
+FIELD_BEFORE = "BEFORE"
+FIELD_AFTER = "AFTER"
 
 FALLBACK_STATUSES = ["접수", "견적", "예정", "진행중", "완료", "보류"]
+FALLBACK_WORK_TYPES = [option["name"] for option in nl.WORK_TYPE_OPTIONS]
 
 app = FastAPI(title="현장 업무 기록")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
@@ -189,6 +194,7 @@ def build_pdf(
     customer: str,
     area: float,
     *,
+    work_type: str | None = None,
     final_amount: int | None = None,
     quote_date: date | None = None,
     project: str | None = None,
@@ -197,12 +203,19 @@ def build_pdf(
     built = quotelib.build_quote(
         customer,
         area,
+        work_type=work_type,
         final_amount=final_amount,
         quote_date=quote_date,
         project=project,
         config=quotelib.load_config(),  # 단가를 고치면 서버 재시작 없이 반영된다
     )
     return quotelib.suggest_filename(built), quotelib.render_bytes(built), built
+
+
+def work_type_choices(db_schema: dict, config: dict) -> list[dict]:
+    """작업항목 목록. 단가가 등록된 항목만 견적서를 자동 생성할 수 있다."""
+    names = na.select_options(db_schema, FIELD_WORK) or FALLBACK_WORK_TYPES
+    return [{"name": name, "priced": quotelib.has_prices(config, name)} for name in names]
 
 
 def notion_error_message(error: na.NotionError) -> str:
@@ -262,6 +275,7 @@ def new_entry(request: Request):
         {
             "statuses": statuses,
             "default_status": "예정" if "예정" in statuses else statuses[0],
+            "work_types": work_type_choices(db_schema, config),
             "owners": na.select_options(db_schema, FIELD_OWNER),
             "today": date.today().isoformat(),
             "db_url": db_schema.get("url", ""),
@@ -278,21 +292,30 @@ def quote_form(request: Request):
 
     config = quotelib.load_config()
     unit = config.get("면적단위", "㎡")
-    rows = [
-        {
-            "name": row.get("품목", ""),
-            "price": f"{int(row.get('단가', 0)):,}",
-            "basis": f"면적 1{unit}당" if isinstance(row.get("수량"), str) else f"{row.get('수량', 1)}식",
-        }
-        for row in config.get("품목", [])
-    ]
+    groups = []
+    for name, entry in quotelib.work_types(config).items():
+        groups.append(
+            {
+                "name": name,
+                "rows": [
+                    {
+                        "name": row.get("품목", ""),
+                        "price": f"{int(row.get('단가', 0)):,}",
+                        "basis": f"면적 1{unit}당"
+                        if isinstance(row.get("수량"), str)
+                        else f"{row.get('수량', 1)}식",
+                    }
+                    for row in entry.get("품목") or []
+                ],
+            }
+        )
     return templates.TemplateResponse(
         request,
         "quote.html",
         {
-            "rows": rows,
+            "groups": groups,
             "area_unit": unit,
-            "project": config.get("공사명", ""),
+            "default_work_type": config.get("공사명", ""),
             "today": date.today().isoformat(),
             "company": config.get("회사", {}).get("상호명", ""),
         },
@@ -326,6 +349,7 @@ def entry_list(request: Request, status: str = ""):
                 "id": page["id"].replace("-", ""),
                 "url": page.get("url", ""),
                 "title": na.plain(properties.get(FIELD_TITLE)) or "(제목 없음)",
+                "work": na.plain(properties.get(FIELD_WORK)),
                 "status": na.plain(properties.get(FIELD_STATUS)),
                 "date": na.plain(properties.get(FIELD_DATE)),
                 "owner": na.plain(properties.get(FIELD_OWNER)),
@@ -374,11 +398,13 @@ def progress_form(request: Request, page_id: str):
             "page_id": page_id,
             "page_url": page.get("url", ""),
             "title": na.plain(properties.get(FIELD_TITLE)) or "(제목 없음)",
+            "work_type": na.plain(properties.get(FIELD_WORK)),
             "work_date": na.plain(properties.get(FIELD_DATE)),
             "address": na.plain(properties.get(FIELD_ADDRESS)),
             "statuses": statuses,
             "current_status": current,
             "owners": na.select_options(db_schema, FIELD_OWNER),
+            "after_filled": bool((properties.get(FIELD_AFTER) or {}).get("files")),
         },
     )
 
@@ -391,6 +417,7 @@ def create_quote_pdf(
     request: Request,
     customer: str = Form(...),
     area: str = Form(...),
+    work_type: str = Form(""),
     amount: str = Form(""),
     quote_date: str = Form(""),
     project: str = Form(""),
@@ -411,6 +438,7 @@ def create_quote_pdf(
         filename, pdf, _ = build_pdf(
             customer,
             area_value,
+            work_type=work_type.strip() or None,
             final_amount=int(parse_amount(amount)) if parse_amount(amount) else None,
             quote_date=day,
             project=project.strip() or None,
@@ -431,6 +459,7 @@ def create_quote_pdf(
 async def create_entry(
     request: Request,
     title: str = Form(...),
+    work_type: str = Form(""),
     status: str = Form(""),
     start_date: str = Form(""),
     end_date: str = Form(""),
@@ -442,6 +471,8 @@ async def create_entry(
     memo: str = Form(""),
     photos: list[UploadFile] = File(default=[]),
     quotes: list[UploadFile] = File(default=[]),
+    before_photos: list[UploadFile] = File(default=[]),
+    after_photos: list[UploadFile] = File(default=[]),
 ):
     if not authorized(request):
         raise HTTPException(401, "접속 코드를 다시 입력해 주세요.")
@@ -459,6 +490,8 @@ async def create_entry(
         db_schema = schema()
         photo_uploads = await collect_uploads(photos, as_image=True)
         quote_uploads = await collect_uploads(quotes, as_image=False)
+        before_uploads = await collect_uploads(before_photos, as_image=True)
+        after_uploads = await collect_uploads(after_photos, as_image=True)
 
         # 면적을 넣었으면 회사 양식 그대로 견적서를 만들어 첨부한다.
         if area_value is not None:
@@ -466,6 +499,7 @@ async def create_entry(
                 filename, pdf, built = build_pdf(
                     title,
                     area_value,
+                    work_type=work_type.strip() or None,
                     final_amount=int(parsed_amount) if parsed_amount else None,
                 )
                 quote_uploads.insert(0, notion().upload(filename, pdf, "application/pdf"))
@@ -476,6 +510,8 @@ async def create_entry(
                 warning = f"견적서 자동 생성을 건너뛰었습니다: {error}"
 
         properties: dict[str, Any] = {FIELD_TITLE: {"title": na.rich_text(title)}}
+        if work_type.strip() and has_property(db_schema, FIELD_WORK, "select"):
+            properties[FIELD_WORK] = {"select": {"name": work_type.strip()}}
         if status and has_property(db_schema, FIELD_STATUS, "select"):
             properties[FIELD_STATUS] = {"select": {"name": status}}
         if start_date and has_property(db_schema, FIELD_DATE, "date"):
@@ -495,6 +531,10 @@ async def create_entry(
             properties[FIELD_AREA] = {"number": area_value}
         if quote_uploads and has_property(db_schema, FIELD_QUOTE, "files"):
             properties[FIELD_QUOTE] = na.files_property(quote_uploads)
+        if before_uploads and has_property(db_schema, FIELD_BEFORE, "files"):
+            properties[FIELD_BEFORE] = na.files_property(before_uploads)
+        if after_uploads and has_property(db_schema, FIELD_AFTER, "files"):
+            properties[FIELD_AFTER] = na.files_property(after_uploads)
 
         children: list[dict] = []
         if memo.strip():
@@ -503,10 +543,17 @@ async def create_entry(
         if photo_uploads:
             children.append(na.heading("현장 사진"))
             children.extend(na.image_block(upload) for upload in photo_uploads)
-        # 견적서 속성이 없는 DB면 본문에 파일 블록으로 붙인다.
+        # 속성이 없는 DB면 본문에 대신 붙여 사진·파일을 잃지 않게 한다.
         if quote_uploads and FIELD_QUOTE not in properties:
             children.append(na.heading("견적서"))
             children.extend(na.file_block(upload) for upload in quote_uploads)
+        for label, uploads, field in (
+            ("BEFORE", before_uploads, FIELD_BEFORE),
+            ("AFTER", after_uploads, FIELD_AFTER),
+        ):
+            if uploads and field not in properties:
+                children.append(na.heading(label))
+                children.extend(na.image_block(upload) for upload in uploads)
 
         page = notion().create_page(DATABASE_ID, properties, children)
     except na.NotionError as error:
@@ -534,23 +581,36 @@ async def update_progress(
     owner: str = Form(""),
     memo: str = Form(""),
     photos: list[UploadFile] = File(default=[]),
+    after_photos: list[UploadFile] = File(default=[]),
 ):
     if not authorized(request):
         raise HTTPException(401, "접속 코드를 다시 입력해 주세요.")
     if not configured():
         raise HTTPException(503, "서버에 노션 토큰/DB ID가 설정되지 않았습니다.")
-    if not (status or memo.strip() or any(item.filename for item in photos if item)):
+    sent_files = [item for item in [*photos, *after_photos] if item and item.filename]
+    if not (status or memo.strip() or sent_files):
         raise HTTPException(400, "변경할 상태나 남길 내용이 없습니다.")
 
     try:
         db_schema = schema()
+        page = notion().page(page_id)
         photo_uploads = await collect_uploads(photos, as_image=True)
+        after_uploads = await collect_uploads(after_photos, as_image=True)
 
         properties: dict[str, Any] = {}
         if status and has_property(db_schema, FIELD_STATUS, "select"):
             properties[FIELD_STATUS] = {"select": {"name": status}}
         if owner.strip() and has_property(db_schema, FIELD_OWNER, "select"):
             properties[FIELD_OWNER] = {"select": {"name": owner.strip()}}
+
+        # AFTER 칸이 비어 있을 때만 채운다. 이미 있으면 덮어써서 잃지 않도록 본문에만 붙인다.
+        after_field_filled = bool(((page.get("properties") or {}).get(FIELD_AFTER) or {}).get("files"))
+        after_to_property = (
+            after_uploads and not after_field_filled
+            and has_property(db_schema, FIELD_AFTER, "files")
+        )
+        if after_to_property:
+            properties[FIELD_AFTER] = na.files_property(after_uploads)
         if properties:
             notion().update_page(page_id, properties)
 
@@ -558,6 +618,9 @@ async def update_progress(
         children: list[dict] = [na.divider(), na.heading(label)]
         children.extend(na.paragraphs(memo))
         children.extend(na.image_block(upload) for upload in photo_uploads)
+        if after_uploads and not after_to_property:
+            children.append(na.heading("AFTER"))
+            children.extend(na.image_block(upload) for upload in after_uploads)
         notion().append_blocks(page_id, children)
         page = notion().page(page_id)
     except na.NotionError as error:

@@ -12,6 +12,16 @@
   </label>
 
   <label class="field">
+    <span>작업항목</span>
+    <select name="work_type">
+      <option value="">선택 안 함</option>
+      {% for item in work_types %}
+      <option value="{{ item.name }}">{{ item.name }}{{ '' if item.priced else ' (단가 미등록)' }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label class="field">
     <span>진행상태</span>
     <select name="status">
       {% for status in statuses %}
@@ -50,8 +60,8 @@
       <input name="phone" type="tel" placeholder="010-0000-0000" autocomplete="off">
     </label>
     <label class="field">
-      <span>견적금액 (원)</span>
-      <input name="amount" type="text" inputmode="numeric" placeholder="1,200,000" autocomplete="off">
+      <span>최종 네고 금액 (원)</span>
+      <input name="amount" type="text" inputmode="numeric" placeholder="비우면 합계 그대로" autocomplete="off">
     </label>
   </div>
 
@@ -63,7 +73,7 @@
   <div class="field">
     <span>현장 사진</span>
     <label class="picker">
-      <input name="photos" type="file" accept="image/*" multiple>
+      <input name="photos" type="file" accept="image/*" multiple data-image>
       <span class="picker-face">사진 찍기 / 앨범에서 고르기</span>
     </label>
     <p class="hint">올리기 전에 자동으로 크기를 줄입니다. 여러 장 한꺼번에 선택할 수 있어요.</p>
@@ -77,8 +87,8 @@
       <em>{{ area_unit }}</em>
     </label>
     <p class="hint">
-      면적만 넣으면 회사 양식 그대로 견적서 PDF를 만들어 노션에 첨부합니다.
-      견적금액을 비워 두면 계산된 합계가 들어갑니다.
+      위에서 고른 작업항목의 단가로 계산해, 회사 양식 그대로 견적서 PDF를 만들어 노션에 첨부합니다.
+      단가가 없는 항목이면 등록만 되고 안내가 뜹니다.
       <a href="/quote">견적서만 따로 만들기 →</a>
     </p>
   </div>
@@ -90,6 +100,30 @@
       <span class="picker-face">파일 선택 (PDF · 엑셀 · 한글)</span>
     </label>
     <ul class="filelist" data-for="quotes"></ul>
+  </div>
+
+  <div class="field boxed">
+    <span>BEFORE · AFTER 사진</span>
+    <p class="hint">시공 전후를 따로 올려 두면 노션에서 <code>BEFORE</code>, <code>AFTER</code> 칸으로 나뉘어 보입니다.</p>
+    <div class="ba">
+      <div class="ba-slot">
+        <em class="ba-tag before">BEFORE</em>
+        <label class="picker">
+          <input name="before_photos" type="file" accept="image/*" multiple data-image>
+          <span class="picker-face">시공 전 사진</span>
+        </label>
+        <ul class="filelist" data-for="before_photos"></ul>
+      </div>
+      <div class="ba-slot">
+        <em class="ba-tag after">AFTER</em>
+        <label class="picker">
+          <input name="after_photos" type="file" accept="image/*" multiple data-image>
+          <span class="picker-face">시공 후 사진</span>
+        </label>
+        <ul class="filelist" data-for="after_photos"></ul>
+      </div>
+    </div>
+    <p class="hint">시공 후 사진은 나중에 목록에서 이 현장을 눌러 올려도 됩니다.</p>
   </div>
 
   <div class="progress" hidden><div class="bar"></div><span class="progress-label">업로드 중…</span></div>

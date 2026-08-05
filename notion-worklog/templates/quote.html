@@ -14,6 +14,18 @@
   </label>
 
   <label class="field">
+    <span>작업항목</span>
+    <select name="work_type">
+      {% for group in groups %}
+      <option value="{{ group.name }}" {{ 'selected' if group.name == default_work_type else '' }}
+              {{ '' if group.rows else 'disabled' }}>
+        {{ group.name }}{{ '' if group.rows else ' (단가 미등록)' }}
+      </option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label class="field">
     <span>면적 <b class="req">*</b></span>
     <div class="inline">
       <input name="area" type="text" inputmode="decimal" required placeholder="10" autocomplete="off">
@@ -32,8 +44,8 @@
       <input name="quote_date" type="date" value="{{ today }}">
     </label>
     <label class="field">
-      <span>공사명</span>
-      <input name="project" type="text" placeholder="{{ project }}" autocomplete="off">
+      <span>공사명 (견적서 표에 찍힐 이름)</span>
+      <input name="project" type="text" placeholder="비우면 작업항목 그대로" autocomplete="off">
     </label>
   </details>
 
@@ -43,10 +55,17 @@
 <section class="card">
   <h2>현재 단가</h2>
   <p class="hint"><code>quote_config.json</code>을 고치면 바로 반영됩니다.</p>
+  {% for group in groups %}
+  <h3 class="group">{{ group.name }}</h3>
+  {% if group.rows %}
   <ul class="pricelist">
-    {% for row in rows %}
+    {% for row in group.rows %}
     <li><span class="name">{{ row.name }}</span><span class="basis">{{ row.basis }}</span><span class="size">{{ row.price }}원</span></li>
     {% endfor %}
   </ul>
+  {% else %}
+  <p class="hint">단가가 아직 없습니다. 알려 주시면 넣어 드립니다.</p>
+  {% endif %}
+  {% endfor %}
 </section>
 {% endblock %}
