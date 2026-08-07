@@ -316,18 +316,36 @@ def suggest_filename(quote: Quote) -> str:
 # -------------------------------------------------------------------- 그리기
 
 
+FONT_FOLDERS = ("/usr/share/fonts", "/System/Library/Fonts", "/Library/Fonts")
+FONT_PATTERNS = ("NanumMyeongjo*.ttf", "NanumGothic*.ttf", "AppleMyungjo*.ttf", "*Gothic*.ttf")
+
+
+def font_opens(path: str) -> bool:
+    """PyMuPDF가 실제로 읽을 수 있는 폰트인지. (.ttc처럼 못 읽는 것도 있다)"""
+    try:
+        if not path or not Path(path).exists():
+            return False
+        fitz.Font(fontfile=path)
+        return True
+    except Exception:
+        return False
+
+
 def find_fonts() -> tuple[str, str]:
     """본문용 한글 폰트(보통/굵게) 경로를 찾는다."""
     override = os.getenv("QUOTE_FONT")
     if override:
         return override, os.getenv("QUOTE_FONT_BOLD", override)
     for regular, bold in FONT_CANDIDATES:
-        if Path(regular).exists():
-            return regular, bold if Path(bold).exists() else regular
-    for pattern in ("NanumMyeongjo*.ttf", "NanumGothic*.ttf", "*Gothic*.tt[fc]"):
-        found = sorted(Path("/usr/share/fonts").rglob(pattern))
-        if found:
-            return str(found[0]), str(found[0])
+        if font_opens(regular):
+            return regular, bold if font_opens(bold) else regular
+    for folder in FONT_FOLDERS:
+        if not Path(folder).is_dir():
+            continue
+        for pattern in FONT_PATTERNS:
+            for found in sorted(Path(folder).rglob(pattern)):
+                if font_opens(str(found)):
+                    return str(found), str(found)
     raise QuoteError(
         "한글 폰트를 찾지 못했습니다.\n"
         "  우분투/데비안: sudo apt-get install fonts-nanum\n"

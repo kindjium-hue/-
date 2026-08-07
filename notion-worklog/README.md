@@ -92,23 +92,30 @@ python3 setup_db.py --database "<기존 DB URL>"
 
 사진·견적서를 자동으로 올리고 견적서를 자동 생성하려면 서버를 띄웁니다.
 
+**맥이면 `웹폼켜기.command`를 더블클릭하세요.** 처음 한 번은 필요한 것을 알아서 내려받고
+(몇 분 걸립니다), 그다음부터는 바로 켜집니다. 창에 이런 것이 나옵니다.
+
+- 이 맥에서 열 주소, 그리고 브라우저가 자동으로 열립니다
+- **같은 와이파이의 휴대폰에서 열 주소 + QR 코드** — 휴대폰 카메라로 찍으면 바로 열립니다
+- `cloudflared`가 깔려 있으면 **현장(LTE)용 https 주소 + QR 코드**까지 만들어 줍니다
+  (한 번만 `brew install cloudflared`)
+
+창을 닫으면 서버도 꺼집니다. 터미널에서 직접 켜려면:
+
 ```bash
 cd notion-worklog
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app:app --host 0.0.0.0 --port 8000
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python serve.py          # 주소·QR 안내까지
+# 또는
+.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
-브라우저에서 <http://localhost:8000> 을 열어 폼이 뜨는지 확인합니다.
 (3단계에서 `.env` 저장을 건너뛰었다면 `cp .env.example .env` 후 값을 채워 주세요.)
 
-### 휴대폰에서 열기
+### 항상 켜 두고 쓰려면
 
-| 상황 | 방법 |
-|---|---|
-| 사무실 와이파이 안에서만 쓴다 | 같은 와이파이에서 `http://<PC IP>:8000` (예: `http://192.168.0.12:8000`) |
-| 현장(LTE)에서도 써야 한다 | `cloudflared tunnel --url http://localhost:8000` → 출력된 `https://…trycloudflare.com` 주소를 카톡으로 공유 |
-| 항상 켜 두고 쓴다 | Render·Railway·Fly 등에 올리고 시작 명령을 `uvicorn app:app --host 0.0.0.0 --port $PORT` 로, `.env` 값은 대시보드의 환경변수로 등록 |
+맥을 꺼도 되게 하려면 Render·Railway·Fly 등에 올리고, 시작 명령을
+`uvicorn app:app --host 0.0.0.0 --port $PORT` 로, `.env` 값은 대시보드의 환경변수로 등록합니다.
 
 휴대폰 사파리/크롬에서 **홈 화면에 추가**해 두면 앱처럼 한 번에 열립니다.
 카메라 접근과 `공유하기` 버튼은 `https`에서만 동작하므로 현장용은 터널이나 배포를 쓰세요.
@@ -238,7 +245,9 @@ python3 -m unittest test_app -v
 ## 파일 구성
 
 ```
-노션DB만들기.command  맥에서 더블클릭하면 노션 DB를 만들어 주는 실행 파일
+노션DB만들기.command  맥에서 더블클릭 — 노션 DB를 만들어 준다
+웹폼켜기.command      맥에서 더블클릭 — 웹 폼을 켜고 휴대폰 주소·QR을 보여 준다
+serve.py           서버 실행 + 주소·QR 안내 (웹폼켜기.command가 실행)
 setup_db.py        노션 DB 생성·속성 보정 (설치 없이 python3만으로 동작)
 notion_lite.py     표준 라이브러리만 쓰는 최소 노션 도구 + DB 속성 정의
 app.py             FastAPI 서버 (화면 + 업로드 처리)
@@ -248,5 +257,5 @@ quote_config.json  회사 정보·품목 단가·특이사항 (여기만 고치�
 assets/seal.png    대표자 도장 (원본 견적서에서 추출)
 templates/         폼·목록·진행 업데이트·견적서 화면
 static/            모바일 CSS, 사진 축소·업로드 스크립트
-test_app.py        가짜 노션으로 돌리는 통합 테스트 (44개)
+test_app.py        가짜 노션으로 돌리는 통합 테스트 (50개)
 ```

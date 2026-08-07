@@ -27,6 +27,7 @@ import app as worklog
 import notion_api as na
 import notion_lite
 import quote
+import serve
 import setup_db
 
 DB_SCHEMA = {
@@ -332,6 +333,59 @@ class SetupDbTest(unittest.TestCase):
         error = notion_lite.NotionHttpError(404, "Could not find page")
         self.assertEqual(str(error), "Could not find page")
         self.assertEqual(str(notion_lite.NotionHttpError(500, "")), "노션 API 오류 (HTTP 500)")
+
+
+class ServeTest(unittest.TestCase):
+    """맥에서 더블클릭으로 서버를 켤 때 쓰는 도우미들."""
+
+    def test_missing_settings(self):
+        self.assertEqual(
+            serve.missing_settings({}), ["NOTION_TOKEN", "NOTION_DATABASE_ID"]
+        )
+        self.assertEqual(serve.missing_settings({"NOTION_TOKEN": "x"}), ["NOTION_DATABASE_ID"])
+        self.assertEqual(
+            serve.missing_settings({"NOTION_TOKEN": "x", "NOTION_DATABASE_ID": "y"}), []
+        )
+        # 공백만 채워 넣은 것도 없는 것으로 본다
+        self.assertEqual(
+            serve.missing_settings({"NOTION_TOKEN": "  ", "NOTION_DATABASE_ID": "y"}),
+            ["NOTION_TOKEN"],
+        )
+
+    def test_pick_port_skips_busy_ones(self):
+        import socket
+
+        taken = socket.socket()
+        taken.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        taken.bind(("0.0.0.0", 0))
+        taken.listen(1)
+        port = taken.getsockname()[1]
+        try:
+            self.assertFalse(serve.port_is_free(port))
+            self.assertEqual(serve.pick_port(port), port + 1)
+        finally:
+            taken.close()
+
+    def test_pick_port_gives_up(self):
+        with unittest.mock.patch.object(serve, "port_is_free", return_value=False):
+            self.assertIsNone(serve.pick_port(9000, tries=3))
+
+    def test_qr_code_is_drawable(self):
+        lines = serve.qr_lines("http://192.168.0.12:8000")
+        self.assertGreater(len(lines), 8)
+        self.assertTrue(all(len(line) == len(lines[0]) for line in lines))
+
+    def test_tunnel_address_pattern(self):
+        found = serve.TUNNEL_PATTERN.search(
+            "2026-08-05 INF |  https://neat-field-abc-123.trycloudflare.com  |"
+        )
+        self.assertEqual(found.group(0), "https://neat-field-abc-123.trycloudflare.com")
+
+    def test_launcher_is_executable(self):
+        for name in ("웹폼켜기.command", "노션DB만들기.command"):
+            script = Path(__file__).resolve().parent / name
+            self.assertTrue(script.exists(), name)
+            self.assertTrue(os.access(script, os.X_OK), f"{name}에 실행 권한이 없습니다")
 
 
 class QuoteTest(unittest.TestCase):

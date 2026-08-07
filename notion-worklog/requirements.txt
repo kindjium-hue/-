@@ -6,6 +6,7 @@ python-multipart>=0.0.9
 python-dotenv>=1.0
 pillow>=10.0
 pymupdf>=1.24
+qrcode>=7.4
 
 # 아이폰 HEIC 사진을 서버에서 변환하고 싶을 때만 (브라우저가 이미 JPEG로 바꿔 보내므로 보통 불필요)
 # pillow-heif>=0.16
