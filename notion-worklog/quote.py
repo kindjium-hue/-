@@ -105,11 +105,14 @@ class QuoteError(RuntimeError):
 class Item:
     name: str
     quantity: float
-    unit_price: int
+    unit_price: float
     note: str = ""
+    fixed_amount: int | None = None  # 최종 금액에 맞춰 역산한 금액
 
     @property
     def amount(self) -> int:
+        if self.fixed_amount is not None:
+            return self.fixed_amount
         return int(round(self.quantity * self.unit_price))
 
 
@@ -238,12 +241,61 @@ def build_items(area: float, config: dict, work_type: str | None = None) -> list
     return items
 
 
+def balance_names(config: dict, work_type: str) -> list[str]:
+    """최종 금액에 맞춰 단가를 다시 나눌 품목 이름들."""
+    entry = work_types(config).get(work_type) or {}
+    return [str(name) for name in (entry.get("단가조정대상") or [])]
+
+
+def match_to_total(
+    items: list[Item], target: int, names: list[str], *, step: int = 1000, unit: int = 10
+) -> None:
+    """최종 금액에 맞춰 지정 품목의 단가를 원래 비율대로 다시 나눈다.
+
+    비율은 설정에 적힌 단가 그대로 쓴다(예: 하도 15,000 : 중도 30,000 : 상도 20,000 = 3:6:4).
+    금액은 `step`(기본 1,000원) 단위로, 단가는 `unit`(기본 10원) 단위로 떨어지게 맞추고,
+    반올림해서 남는 돈은 비중이 가장 큰 품목(중도 방수코트)이 흡수한다.
+    그래서 합계가 최종 금액과 정확히 맞는다.
+    """
+    picked = [item for item in items if item.name in names]
+    if not picked:
+        raise QuoteError(
+            "단가를 조정할 품목이 없습니다. "
+            f"quote_config.json의 `단가조정대상`을 확인하세요: {', '.join(names) or '(비어 있음)'}"
+        )
+
+    fixed = sum(item.amount for item in items if item.name not in names)
+    room = int(target) - fixed
+    if room <= 0:
+        raise QuoteError(
+            f"최종 금액({target:,.0f}원)이 조정하지 않는 항목 합계({fixed:,}원)보다 작습니다. "
+            "금액을 올리거나 단가 조정을 끄고 만들어 주세요."
+        )
+
+    weights = [item.unit_price for item in picked]
+    if sum(weights) <= 0:
+        raise QuoteError("조정할 품목의 단가가 0이어서 비율을 알 수 없습니다.")
+
+    biggest = max(range(len(picked)), key=lambda index: weights[index])
+    amounts = [
+        int(round(room * weight / sum(weights) / step)) * step for weight in weights
+    ]
+    # 반올림 잔액은 비중이 가장 큰 품목(중도)이 흡수해 합계를 정확히 맞춘다
+    amounts[biggest] = room - sum(amounts[i] for i in range(len(amounts)) if i != biggest)
+
+    for item, amount in zip(picked, amounts):
+        item.fixed_amount = amount
+        # 표에 찍히는 단가는 10원 단위로 다듬는다 (금액은 위에서 맞춘 값 그대로)
+        item.unit_price = round(amount / item.quantity / unit) * unit if item.quantity else 0
+
+
 def build_quote(
     customer: str,
     area: float,
     *,
     work_type: str | None = None,
     final_amount: int | None = None,
+    match_total: bool = False,
     quote_date: date | None = None,
     project: str | None = None,
     config: dict | None = None,
@@ -256,10 +308,14 @@ def build_quote(
 
     config = config or load_config()
     work_type = (work_type or config.get("기본작업항목", "")).strip()
+    items = build_items(area, config, work_type)
+    if match_total and final_amount:
+        # 합계를 최종 금액에 맞춘다. 그러면 합계 = 최종 네고 금액이 된다.
+        match_to_total(items, int(final_amount), balance_names(config, work_type))
     return Quote(
         customer=customer,
         area=area,
-        items=build_items(area, config, work_type),
+        items=items,
         quote_date=quote_date or date.today(),
         project=project or project_name(config, work_type),
         work_type=work_type,
@@ -653,6 +709,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="시공 평수 (평)")
     parser.add_argument("--금액", "--final", dest="final",
                         help="최종 네고 금액. 생략하면 합계 그대로")
+    parser.add_argument("--단가맞춤", "--match", dest="match_total", action="store_true",
+                        help="최종 금액에 맞춰 방수코트 단가를 원래 비율대로 다시 나눈다")
     parser.add_argument("--할인", "--discount", dest="discount", type=float,
                         help="합계에서 깎을 비율(%%). 예: 15 → 15%% 할인, 만원 단위 내림")
     parser.add_argument("--날짜", "--date", dest="day", help="견적일 (YYYY-MM-DD, 기본 오늘)")
@@ -671,6 +729,7 @@ def main(argv: list[str] | None = None) -> int:
             args.area,
             work_type=args.work_type,
             final_amount=parse_amount(args.final),
+            match_total=args.match_total,
             quote_date=day,
             project=args.project,
             config=config,
@@ -680,6 +739,10 @@ def main(argv: list[str] | None = None) -> int:
                 raise QuoteError("--할인은 0 이상 100 미만이어야 합니다.")
             discounted = quote.subtotal * (1 - args.discount / 100)
             quote.final_amount = int(discounted // 10000 * 10000)
+            if args.match_total:
+                match_to_total(
+                    quote.items, quote.final_amount, balance_names(config, quote.work_type)
+                )
         path = render_pdf(quote, args.out)
     except QuoteError as error:
         print(f"실패: {error}", file=sys.stderr)

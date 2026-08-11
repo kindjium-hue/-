@@ -41,6 +41,10 @@
       <span>최종 네고 금액 (원)</span>
       <input name="amount" type="text" inputmode="numeric" placeholder="비우면 합계 그대로" autocomplete="off">
     </label>
+    <label class="check">
+      <input name="match" type="checkbox" value="1">
+      <span>이 금액에 맞춰 단가 조정 (방수코트 비율 유지)</span>
+    </label>
     <label class="field">
       <span>견적일</span>
       <input name="quote_date" type="date" value="{{ today }}">

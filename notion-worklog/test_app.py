@@ -482,6 +482,59 @@ class QuoteTest(unittest.TestCase):
         self.assertEqual(common, self.config["특이사항"])
         self.assertNotIn("* 공사명: 외벽 방수 공사", common)
 
+    def test_match_total_rebalances_coating_prices(self):
+        """최종 금액을 넣으면 방수코트 단가를 3:6:4 비율로 다시 나눈다."""
+        built = quote.build_quote(
+            "카카오프렌즈 지곡점", 51, work_type="옥상방수",
+            final_amount=5_700_000, match_total=True, config=self.config,
+        )
+        # 합계가 최종 금액과 정확히 일치한다
+        self.assertEqual(built.subtotal, 5_700_000)
+        self.assertEqual(built.total, 5_700_000)
+
+        by_name = {item.name: item for item in built.items}
+        # 조정하지 않는 항목은 그대로
+        self.assertEqual(by_name["바탕면작업"].amount, 1_020_000)
+        self.assertEqual(by_name["폐기물처리"].amount, 200_000)
+
+        low = by_name["하도 방수코트"].amount
+        mid = by_name["중도 방수코트"].amount
+        high = by_name["상도 방수코트"].amount
+        # 중도가 가장 크고, 원래 비율(3:6:4)을 유지한다
+        self.assertGreater(mid, high)
+        self.assertGreater(high, low)
+        coats = low + mid + high
+        self.assertAlmostEqual(low / coats, 3 / 13, places=3)
+        self.assertAlmostEqual(mid / coats, 6 / 13, places=3)
+        self.assertAlmostEqual(high / coats, 4 / 13, places=3)
+        # 금액은 1,000원 단위, 단가는 10원 단위로 떨어져 문서가 깔끔하다
+        for name in ("하도 방수코트", "중도 방수코트", "상도 방수코트"):
+            self.assertEqual(by_name[name].amount % 1000, 0, name)
+            self.assertEqual(by_name[name].unit_price % 10, 0, name)
+
+    def test_match_total_works_for_many_amounts(self):
+        for area, target in ((51, 5_700_000), (30, 4_000_000), (12.5, 2_000_000), (100, 12_345_000)):
+            built = quote.build_quote(
+                "테스트", area, work_type="옥상방수",
+                final_amount=target, match_total=True, config=self.config,
+            )
+            self.assertEqual(built.subtotal, target, f"{area}평 {target}원")
+
+    def test_match_total_refuses_when_amount_too_small(self):
+        # 51평이면 조정하지 않는 항목만 2,695,000원이다
+        with self.assertRaises(quote.QuoteError) as caught:
+            quote.build_quote(
+                "테스트", 51, work_type="옥상방수",
+                final_amount=1_000_000, match_total=True, config=self.config,
+            )
+        self.assertIn("작습니다", str(caught.exception))
+
+    def test_match_total_needs_targets(self):
+        with self.assertRaises(quote.QuoteError):
+            quote.match_to_total(
+                quote.build_items(51, self.config, "옥상방수"), 5_700_000, ["없는품목"]
+            )
+
     def test_final_amount_overrides_total(self):
         built = quote.build_quote("탑동 881~8", 10, work_type="외벽방수",
                                   final_amount=1_400_000, config=self.config)
@@ -608,6 +661,31 @@ class QuoteWebTest(unittest.TestCase):
 
         uploaded = [body for method, path, body in self.fake.calls if path == "/v1/file_uploads"]
         self.assertEqual(uploaded[0]["content_type"], "application/pdf")
+
+    def test_match_option_from_the_form(self):
+        response = self.client.post(
+            "/api/quote",
+            data={"customer": "카카오프렌즈 지곡점", "area": "51", "work_type": "옥상방수",
+                  "amount": "5,700,000", "match": "1"},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        with fitz.open(stream=response.content, filetype="pdf") as document:
+            text = document[0].get_text()
+        # 단가를 조정했으니 합계도 최종 금액과 같아야 한다
+        self.assertIn("5,700,000", text)
+        self.assertNotIn("6,010,000", text)
+
+    def test_without_match_the_subtotal_stays(self):
+        response = self.client.post(
+            "/api/quote",
+            data={"customer": "카카오프렌즈 지곡점", "area": "51", "work_type": "옥상방수",
+                  "amount": "5,700,000"},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        with fitz.open(stream=response.content, filetype="pdf") as document:
+            text = document[0].get_text()
+        self.assertIn("6,010,000", text)  # 합계는 그대로
+        self.assertIn("5,700,000", text)  # 최종 네고 금액만 다르다
 
     def test_manual_amount_goes_into_the_pdf(self):
         response = self.client.post(

@@ -196,6 +196,7 @@ def build_pdf(
     *,
     work_type: str | None = None,
     final_amount: int | None = None,
+    match_total: bool = False,
     quote_date: date | None = None,
     project: str | None = None,
 ) -> tuple[str, bytes, quotelib.Quote]:
@@ -205,6 +206,7 @@ def build_pdf(
         area,
         work_type=work_type,
         final_amount=final_amount,
+        match_total=match_total,
         quote_date=quote_date,
         project=project,
         config=quotelib.load_config(),  # 단가를 고치면 서버 재시작 없이 반영된다
@@ -426,6 +428,7 @@ def create_quote_pdf(
     area: str = Form(...),
     work_type: str = Form(""),
     amount: str = Form(""),
+    match: str = Form(""),
     quote_date: str = Form(""),
     project: str = Form(""),
 ):
@@ -447,6 +450,7 @@ def create_quote_pdf(
             area_value,
             work_type=work_type.strip() or None,
             final_amount=int(parse_amount(amount)) if parse_amount(amount) else None,
+            match_total=bool(match),
             quote_date=day,
             project=project.strip() or None,
         )
@@ -474,6 +478,7 @@ async def create_entry(
     address: str = Form(""),
     phone: str = Form(""),
     amount: str = Form(""),
+    match: str = Form(""),
     area: str = Form(""),
     memo: str = Form(""),
     photos: list[UploadFile] = File(default=[]),
@@ -508,6 +513,7 @@ async def create_entry(
                     area_value,
                     work_type=work_type.strip() or None,
                     final_amount=int(parsed_amount) if parsed_amount else None,
+                    match_total=bool(match),
                 )
                 quote_uploads.insert(0, notion().upload(filename, pdf, "application/pdf"))
                 if parsed_amount is None:

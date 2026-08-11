@@ -149,6 +149,16 @@ input:focus, select:focus, textarea:focus {
 .inline em { font-style: normal; color: var(--muted); font-weight: 600; flex: none; }
 .inline em.conv { font-weight: 400; font-size: 13px; }
 
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--text);
+}
+.check input[type="checkbox"] { width: 20px; height: 20px; flex: none; accent-color: var(--accent); }
+
 .ba { display: flex; gap: 10px; margin-top: 10px; }
 .ba-slot { flex: 1; min-width: 0; }
 .ba-tag {
