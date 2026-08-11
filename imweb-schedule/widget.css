@@ -117,6 +117,14 @@
   color: var(--accent);
   text-decoration: none;
 }
+.cs-app .cs-link[aria-disabled="true"] { color: var(--muted); cursor: default; }
+.cs-app .cs-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
 .cs-app .cs-help {
   margin: 0 0 14px;
   font-size: 13px;

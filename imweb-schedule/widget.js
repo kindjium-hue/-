@@ -30,6 +30,7 @@ let items = [];
 let cursor = new Date();
 let chosen = "";
 let loading = false;
+let boardOk = false;
 
 /* ------------------------------------------------------------------ 날짜 */
 
@@ -133,6 +134,8 @@ const load = () => {
   const step = (page) => {
     if (page > pages) {
       loading = false;
+      boardOk = failed === "";
+      setWriteLink();
       items = gathered;
       items.sort((a, b) => (a.key + a.time < b.key + b.time ? -1 : 1));
       if (items.length > 0) {
@@ -552,12 +555,30 @@ const buildForm = () => {
     option.textContent = owners[i];
     owner.appendChild(option);
   }
+};
 
-  const write = setting("write") !== "" ? setting("write") : setting("board");
+/** 게시판 주소가 맞는지에 따라 글쓰기 링크를 살리거나 잠근다 */
+const setWriteLink = () => {
+  const board = setting("board");
+  const write = setting("write") !== "" ? setting("write") : board;
   const link = pick("write-link");
+  const hint = pick("write-hint");
+
+  if (write === "" || !boardOk) {
+    link.removeAttribute("href");
+    link.setAttribute("aria-disabled", "true");
+    link.textContent = "③ 게시판 글쓰기 — 게시판 주소를 먼저 맞춰 주세요";
+    hint.textContent = board === ""
+      ? "위젯 코드의 data-board 에 일정 게시판 목록 주소(도메인 뒤 경로, 예: /schedule)를 넣어 주세요."
+      : `지금 설정된 주소 «${write}» 를 열 수 없습니다. 아임웹에 게시판을 만들고 그 주소로 data-board 를 고쳐 주세요.`;
+    return;
+  }
   link.setAttribute("href", write);
   link.setAttribute("target", "_blank");
   link.setAttribute("rel", "noopener");
+  link.removeAttribute("aria-disabled");
+  link.textContent = "③ 게시판 글쓰기 열기 →";
+  hint.textContent = `«${write}» 로 이동합니다. 글쓰기 주소가 따로 있으면 data-write 에 넣으세요.`;
 };
 
 /* ------------------------------------------------------------------ 폭·게이트 */
@@ -598,6 +619,7 @@ const setup = () => {
   pick("new-date").value = chosen;
   buildForm();
   compose();
+  setWriteLink();
 
   pick("pin-submit").addEventListener("click", checkPin);
   pick("pin-input").addEventListener("keydown", (event) => {
