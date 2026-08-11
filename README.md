@@ -42,3 +42,7 @@ python3 render/make_reels.py [출력경로]
 `imweb-widget/` — 같은 견적서를 아임웹 페이지에서 뽑는 위젯(HTML/CSS/JS)입니다.
 평수를 넣으면 견적서가 화면에 채워지고, 브라우저 인쇄로 PDF로 저장합니다.
 붙여넣는 방법은 `imweb-widget/README.md` 참고.
+
+`imweb-schedule/` — 아임웹 게시판에 일정 글을 올리면 달력에 자동으로 나타나는
+위젯입니다. 월간·주간 보기, 날짜별 일정, 작업항목 중복 선택, 담당자·장소·진행사항,
+BEFORE/AFTER 사진까지 게시판 글 하나로 관리합니다. `imweb-schedule/README.md` 참고.

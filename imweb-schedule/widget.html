@@ -1,0 +1,124 @@
+{{!-- @name text-pin @type textfield @default 8282 @label "접속 번호" @placeholder "직원에게 알려줄 번호" --}}
+{{!-- @name text-board @type textfield @default "/board" @label "일정 게시판 주소" @placeholder "/schedule" --}}
+{{!-- @name text-write @type textfield @default "" @label "글쓰기 주소 (비우면 게시판 주소)" @placeholder "/board?mode=write" --}}
+{{!-- @name text-pages @type textfield @default 3 @label "읽어 올 목록 페이지 수" --}}
+{{!-- @name text-works @type textfield @default "누수탐지,누수피해복구,하수구,옥상방수,외벽방수,기타" @label "작업항목 (쉼표로 구분)" --}}
+{{!-- @name text-owners @type textfield @default "윤병동,송경훈,원정연" @label "담당자 (쉼표로 구분)" --}}
+
+<section class="cs-app" data-state="locked" data-view="month" data-schedule-root
+  data-pin="{{text-pin}}"
+  data-board="{{text-board}}"
+  data-write="{{text-write}}"
+  data-pages="{{text-pages}}"
+  data-works="{{text-works}}"
+  data-owners="{{text-owners}}">
+
+  <div class="cs-gate" data-gate>
+    <h2 class="cs-gate__title">청명 일정</h2>
+    <p class="cs-gate__desc">직원용입니다. 접속 번호를 넣어 주세요.</p>
+    <div class="cs-gate__row">
+      <input class="cs-input" type="password" inputmode="numeric" autocomplete="off" aria-label="접속 번호" data-pin-input>
+      <button class="cs-btn" type="button" data-pin-submit>들어가기</button>
+    </div>
+    <p class="cs-gate__error" data-pin-error hidden>번호가 맞지 않습니다.</p>
+  </div>
+
+  <div class="cs-panel" data-panel hidden>
+    <div class="cs-bar">
+      <div class="cs-nav">
+        <button class="cs-round" type="button" aria-label="이전" data-prev>‹</button>
+        <strong class="cs-period" data-period></strong>
+        <button class="cs-round" type="button" aria-label="다음" data-next>›</button>
+      </div>
+      <div class="cs-bar__right">
+        <div class="cs-tabs" role="group" aria-label="보기 방식">
+          <button class="cs-tab" type="button" aria-pressed="true" data-view-month>월간</button>
+          <button class="cs-tab" type="button" aria-pressed="false" data-view-week>주간</button>
+        </div>
+        <button class="cs-ghost" type="button" data-today>오늘</button>
+        <button class="cs-ghost" type="button" data-reload>새로 고침</button>
+      </div>
+    </div>
+
+    <p class="cs-status" data-status role="status">일정을 읽고 있습니다…</p>
+
+    <div class="cs-cal" data-cal></div>
+
+    <section class="cs-day">
+      <h3 class="cs-day__title" data-day-title>날짜를 누르면 그날 일정이 보입니다</h3>
+      <div class="cs-day__list" data-day-list></div>
+    </section>
+
+    <details class="cs-new">
+      <summary class="cs-new__head">일정 등록하기</summary>
+
+      <p class="cs-help">
+        아래를 채우고 <b>제목·본문 복사</b>를 누른 뒤 <b>게시판 글쓰기</b>에 붙여넣어 저장하면,
+        새로 고침할 때 달력에 자동으로 나타납니다. 사진은 게시판 본문에
+        <b>BEFORE</b>·<b>AFTER</b> 자리에 올리세요.
+      </p>
+
+      <div class="cs-row">
+        <div class="cs-field">
+          <label class="cs-label" for="cs-date">날짜</label>
+          <input class="cs-input" id="cs-date" type="date" data-new-date>
+        </div>
+        <div class="cs-field">
+          <label class="cs-label" for="cs-time">시간</label>
+          <input class="cs-input" id="cs-time" type="time" data-new-time>
+        </div>
+      </div>
+
+      <div class="cs-field">
+        <span class="cs-label">작업항목 (여러 개 고를 수 있습니다)</span>
+        <div class="cs-checks" data-new-works></div>
+      </div>
+
+      <div class="cs-field">
+        <label class="cs-label" for="cs-site">현장명 · 고객명</label>
+        <input class="cs-input" id="cs-site" type="text" placeholder="예) 카카오프렌즈 지곡점" data-new-site>
+      </div>
+
+      <div class="cs-row">
+        <div class="cs-field">
+          <label class="cs-label" for="cs-owner">담당자</label>
+          <select class="cs-input" id="cs-owner" data-new-owner></select>
+        </div>
+        <div class="cs-field">
+          <label class="cs-label" for="cs-status">진행상태</label>
+          <select class="cs-input" id="cs-status" data-new-status>
+            <option value="예정">예정</option>
+            <option value="진행중">진행중</option>
+            <option value="완료">완료</option>
+            <option value="보류">보류</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="cs-field">
+        <label class="cs-label" for="cs-place">장소 · 위치</label>
+        <input class="cs-input" id="cs-place" type="text" placeholder="예) 수원시 권선구 서호동로26번길 19" data-new-place>
+      </div>
+
+      <div class="cs-field">
+        <label class="cs-label" for="cs-note">진행사항 · 메모</label>
+        <textarea class="cs-input cs-area" id="cs-note" rows="3" placeholder="예) 옥상 크랙 3군데 확인, 자재 미리 올려 둠" data-new-note></textarea>
+      </div>
+
+      <div class="cs-out">
+        <label class="cs-label" for="cs-title-out">① 게시판 제목</label>
+        <textarea class="cs-input cs-area" id="cs-title-out" rows="2" readonly data-out-title></textarea>
+        <button class="cs-btn" type="button" data-copy-title>제목 복사</button>
+      </div>
+
+      <div class="cs-out">
+        <label class="cs-label" for="cs-body-out">② 게시판 본문</label>
+        <textarea class="cs-input cs-area" id="cs-body-out" rows="12" readonly data-out-body></textarea>
+        <button class="cs-btn" type="button" data-copy-body>본문 복사</button>
+      </div>
+
+      <p class="cs-copied" data-copied hidden></p>
+      <a class="cs-link" href="/" data-write-link>③ 게시판 글쓰기 열기 →</a>
+    </details>
+  </div>
+</section>

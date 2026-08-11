@@ -1,0 +1,1193 @@
+<!--
+  ┌──────────────────────────────────────────────────────────────┐
+  │  청명 일정 달력 — 한 파일 버전 (아임웹 코드위젯용)           │
+  └──────────────────────────────────────────────────────────────┘
+  아임웹 관리자 → 페이지 편집 → 위젯 추가 → 「코드」 → 코드 에디터 열기 →
+  이 파일 내용을 처음부터 끝까지 통째로 붙여넣으세요.
+
+  고칠 곳은 바로 아래 <section ...> 한 줄입니다.
+    · data-pin="8282"       접속 번호 (비우면 번호 없이 열립니다)
+    · data-board="/board"   일정 게시판 목록 주소 ★ 꼭 사장님 게시판 주소로 바꾸세요
+    · data-write=""         글쓰기 주소 (비우면 게시판 주소로 갑니다)
+    · data-pages="3"        목록을 몇 페이지까지 읽을지
+    · data-works="..."      작업항목 (쉼표로 구분, 색은 앞에서부터 6개까지)
+    · data-owners="..."     담당자 (쉼표로 구분)
+
+  게시판 글 제목 규칙 (위젯의 「일정 등록하기」가 자동으로 만들어 줍니다)
+    2026-08-14 09:00 | 옥상방수, 누수탐지 | 카카오프렌즈 지곡점 | 송경훈 | 수원 권선구 | 예정
+
+  widget.html · widget.css · widget.js 를 합쳐 만든 파일입니다.
+  세 파일을 고친 뒤 `python3 onefile.py` 를 다시 실행하면 새로 만들어집니다.
+-->
+
+<style>
+.cs-app {
+  --ink: #17202b;
+  --muted: #67707d;
+  --edge: #e2e6eb;
+  --soft: #f4f6f8;
+  --accent: #2f6df6;
+  --today: #fff6d6;
+  --today-line: #e2c96a;
+  --w0: #d94f4f;
+  --w1: #d97a2b;
+  --w2: #8a6d3b;
+  --w3: #2f6df6;
+  --w4: #1f9d76;
+  --w5: #7a4fd9;
+  --w9: #7b8494;
+  color: var(--ink);
+  background: transparent;
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+               "Malgun Gothic", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.cs-app[data-state="open"] .cs-gate { display: none; }
+.cs-app .cs-input,
+.cs-app .cs-btn,
+.cs-app .cs-tab,
+.cs-app .cs-ghost,
+.cs-app .cs-round { box-sizing: border-box; }
+
+/* ------------------------------------------------------------------ 게이트 */
+
+.cs-app .cs-gate {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 28px 20px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  text-align: center;
+}
+.cs-app .cs-gate__title { margin: 0 0 6px; font-size: 20px; font-weight: 700; }
+.cs-app .cs-gate__desc { margin: 0 0 16px; font-size: 14px; color: var(--muted); }
+.cs-app .cs-gate__row { display: flex; gap: 8px; }
+.cs-app .cs-gate__error { margin: 10px 0 0; font-size: 14px; color: #d33b3b; }
+
+/* -------------------------------------------------------------- 공통 부품 */
+
+.cs-app .cs-input {
+  width: 100%;
+  padding: 11px 12px;
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  background: #fbfcfd;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  appearance: none;
+}
+.cs-app .cs-area { line-height: 1.6; resize: vertical; }
+.cs-app .cs-btn {
+  flex: 0 0 auto;
+  margin-top: 8px;
+  padding: 11px 18px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--accent);
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.cs-app .cs-ghost,
+.cs-app .cs-tab {
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--soft);
+  border: 1px solid var(--edge);
+  border-radius: 9px;
+  cursor: pointer;
+}
+.cs-app .cs-tab[aria-pressed="true"] {
+  color: #ffffff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.cs-app .cs-round {
+  width: 38px;
+  height: 38px;
+  font-family: inherit;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--soft);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.cs-app .cs-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.cs-app .cs-field { margin-bottom: 14px; }
+.cs-app .cs-row { display: flex; gap: 12px; }
+.cs-app .cs-row .cs-field { flex: 1 1 0; min-width: 0; }
+.cs-app .cs-link {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+.cs-app .cs-help {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted);
+  word-break: keep-all;
+}
+
+/* ---------------------------------------------------------------- 머리 줄 */
+
+.cs-app .cs-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.cs-app .cs-nav { display: flex; align-items: center; gap: 8px; }
+.cs-app .cs-period { font-size: 18px; font-weight: 700; }
+.cs-app .cs-bar__right { display: flex; align-items: center; gap: 6px; }
+.cs-app .cs-tabs { display: flex; gap: 4px; margin-right: 4px; }
+.cs-app .cs-status {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.cs-app .cs-status[data-bad="yes"] {
+  padding: 10px 12px;
+  color: #96471f;
+  background: #fdf1e6;
+  border: 1px solid #f0d3b6;
+  border-radius: 10px;
+  line-height: 1.7;
+}
+
+/* ------------------------------------------------------------------ 달력 */
+
+.cs-app .cs-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.cs-app .cs-head {
+  padding: 8px 4px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--muted);
+  background: var(--soft);
+  border-bottom: 1px solid var(--edge);
+}
+.cs-app .cs-head--sun { color: #d94f4f; }
+.cs-app .cs-head--sat { color: #2f6df6; }
+.cs-app .cs-cell {
+  display: block;
+  width: 100%;
+  min-height: 74px;
+  padding: 5px 4px;
+  font-family: inherit;
+  text-align: left;
+  background: #ffffff;
+  border: 0;
+  border-top: 1px solid var(--edge);
+  border-left: 1px solid var(--edge);
+  cursor: pointer;
+}
+.cs-app .cs-cell--pad { background: #fafbfc; }
+.cs-app .cs-cell--today { background: var(--today); box-shadow: inset 0 0 0 2px var(--today-line); }
+.cs-app .cs-cell--on { box-shadow: inset 0 0 0 2px var(--accent); }
+.cs-app .cs-cell__num {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.cs-app .cs-cell--pad .cs-cell__num { color: #b7bec8; }
+.cs-app .cs-cell__num--sun { color: #d94f4f; }
+.cs-app .cs-cell__num--sat { color: #2f6df6; }
+
+.cs-app .cs-chip {
+  display: block;
+  margin-bottom: 2px;
+  padding: 2px 5px;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #ffffff;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border-radius: 4px;
+  background: var(--w9);
+}
+.cs-app .cs-chip--w0 { background: var(--w0); }
+.cs-app .cs-chip--w1 { background: var(--w1); }
+.cs-app .cs-chip--w2 { background: var(--w2); }
+.cs-app .cs-chip--w3 { background: var(--w3); }
+.cs-app .cs-chip--w4 { background: var(--w4); }
+.cs-app .cs-chip--w5 { background: var(--w5); }
+.cs-app .cs-more { font-size: 10px; color: var(--muted); }
+
+/* 주간 보기 */
+
+.cs-app .cs-week { display: flex; flex-direction: column; gap: 8px; }
+.cs-app .cs-wrow {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  font-family: inherit;
+  text-align: left;
+  background: #ffffff;
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.cs-app .cs-wrow--today { background: var(--today); border-color: var(--today-line); }
+.cs-app .cs-wrow--on { box-shadow: inset 0 0 0 2px var(--accent); }
+.cs-app .cs-wrow__day { font-size: 13px; font-weight: 700; }
+.cs-app .cs-wrow__day small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); }
+.cs-app .cs-wrow__body { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.cs-app .cs-wrow__empty { font-size: 12px; color: #a6adb8; }
+.cs-app .cs-wrow .cs-chip { display: inline-block; margin: 0; max-width: 100%; }
+
+/* -------------------------------------------------------- 그날 일정 목록 */
+
+.cs-app .cs-day { margin-top: 16px; }
+.cs-app .cs-day__title { margin: 0 0 10px; font-size: 16px; font-weight: 700; }
+.cs-app .cs-day__list { display: flex; flex-direction: column; gap: 10px; }
+.cs-app .cs-item {
+  padding: 13px 14px;
+  background: #ffffff;
+  border: 1px solid var(--edge);
+  border-left: 4px solid var(--w9);
+  border-radius: 0 12px 12px 0;
+}
+.cs-app .cs-item--w0 { border-left-color: var(--w0); }
+.cs-app .cs-item--w1 { border-left-color: var(--w1); }
+.cs-app .cs-item--w2 { border-left-color: var(--w2); }
+.cs-app .cs-item--w3 { border-left-color: var(--w3); }
+.cs-app .cs-item--w4 { border-left-color: var(--w4); }
+.cs-app .cs-item--w5 { border-left-color: var(--w5); }
+.cs-app .cs-item__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.cs-app .cs-item__time { font-size: 15px; font-weight: 700; }
+.cs-app .cs-item__site { font-size: 15px; font-weight: 700; word-break: keep-all; }
+.cs-app .cs-badge {
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--w9);
+  border-radius: 999px;
+}
+.cs-app .cs-badge--w0 { background: var(--w0); }
+.cs-app .cs-badge--w1 { background: var(--w1); }
+.cs-app .cs-badge--w2 { background: var(--w2); }
+.cs-app .cs-badge--w3 { background: var(--w3); }
+.cs-app .cs-badge--w4 { background: var(--w4); }
+.cs-app .cs-badge--w5 { background: var(--w5); }
+.cs-app .cs-state {
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--soft);
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+}
+.cs-app .cs-kv {
+  display: flex;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 13px;
+}
+.cs-app .cs-kv span { flex: 0 0 48px; color: var(--muted); }
+.cs-app .cs-kv b { flex: 1 1 auto; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+.cs-app .cs-item__foot { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.cs-app .cs-item__foot .cs-ghost { padding: 7px 11px; font-size: 13px; }
+.cs-app .cs-item__foot a.cs-ghost { text-decoration: none; }
+.cs-app .cs-shots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.cs-app .cs-shot { flex: 0 0 auto; width: 104px; }
+.cs-app .cs-shot img {
+  display: block;
+  width: 100%;
+  height: 78px;
+  object-fit: cover;
+  background: var(--soft);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+}
+.cs-app .cs-shot__tag {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.cs-app .cs-empty {
+  padding: 18px 14px;
+  font-size: 14px;
+  color: var(--muted);
+  text-align: center;
+  background: var(--soft);
+  border-radius: 12px;
+}
+
+/* ------------------------------------------------------------ 등록 도우미 */
+
+.cs-app .cs-new {
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+}
+.cs-app .cs-new__head { font-size: 15px; font-weight: 700; cursor: pointer; }
+.cs-app .cs-new[open] .cs-new__head { margin-bottom: 14px; }
+.cs-app .cs-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cs-app .cs-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 11px;
+  font-size: 14px;
+  background: var(--soft);
+  border: 1px solid var(--edge);
+  border-radius: 9px;
+  cursor: pointer;
+}
+.cs-app .cs-check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.cs-app .cs-out { margin-bottom: 14px; }
+.cs-app .cs-copied {
+  margin: 0 0 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--today);
+  border: 1px solid var(--today-line);
+  border-radius: 9px;
+}
+
+/* ------------------------------------------------------------------ 모바일 */
+/* 화면 크기가 아니라 위젯이 놓인 칸의 너비로 판단한다. */
+
+.cs-app.is-mobile .cs-bar { gap: 8px; }
+.cs-app.is-mobile .cs-nav { flex: 1 1 100%; justify-content: space-between; }
+.cs-app.is-mobile .cs-period { font-size: 16px; }
+.cs-app.is-mobile .cs-bar__right { flex: 1 1 100%; justify-content: space-between; }
+.cs-app.is-mobile .cs-cell { min-height: 62px; padding: 4px 3px; }
+.cs-app.is-mobile .cs-chip { font-size: 10px; padding: 1px 4px; }
+.cs-app.is-mobile .cs-row { display: block; }
+.cs-app.is-mobile .cs-row .cs-field { margin-bottom: 14px; }
+.cs-app.is-mobile .cs-input { min-height: 46px; }
+.cs-app.is-mobile .cs-area { min-height: 0; }
+.cs-app.is-mobile .cs-btn { width: 100%; min-height: 46px; }
+.cs-app.is-mobile .cs-check { flex: 1 1 44%; }
+.cs-app.is-mobile .cs-gate__row { display: block; }
+.cs-app.is-mobile .cs-gate__row .cs-input { margin-bottom: 8px; }
+.cs-app.is-mobile .cs-gate__row .cs-btn { margin-top: 0; }
+
+.cs-app.is-narrow .cs-cell { min-height: 54px; }
+.cs-app.is-narrow .cs-cell__num { font-size: 12px; }
+.cs-app.is-narrow .cs-chip { font-size: 9px; }
+.cs-app.is-narrow .cs-wrow { grid-template-columns: 54px 1fr; gap: 8px; }
+.cs-app.is-narrow .cs-item__site,
+.cs-app.is-narrow .cs-item__time { font-size: 14px; }
+.cs-app.is-narrow .cs-kv { font-size: 12px; }
+.cs-app.is-narrow .cs-shot { width: 92px; }
+
+/* -------------------------------------------------------------------- 인쇄 */
+
+@media print {
+  .cs-app .cs-gate,
+  .cs-app .cs-bar__right,
+  .cs-app .cs-new,
+  .cs-app .cs-item__foot { display: none; }
+  .cs-app .cs-cell { min-height: 84px; }
+}
+</style>
+
+<section class="cs-app" data-state="locked" data-view="month" data-schedule-root
+  data-pin="8282"
+  data-board="/board"
+  data-write=""
+  data-pages="3"
+  data-works="누수탐지,누수피해복구,하수구,옥상방수,외벽방수,기타"
+  data-owners="윤병동,송경훈,원정연">
+
+  <div class="cs-gate" data-gate>
+    <h2 class="cs-gate__title">청명 일정</h2>
+    <p class="cs-gate__desc">직원용입니다. 접속 번호를 넣어 주세요.</p>
+    <div class="cs-gate__row">
+      <input class="cs-input" type="password" inputmode="numeric" autocomplete="off" aria-label="접속 번호" data-pin-input>
+      <button class="cs-btn" type="button" data-pin-submit>들어가기</button>
+    </div>
+    <p class="cs-gate__error" data-pin-error hidden>번호가 맞지 않습니다.</p>
+  </div>
+
+  <div class="cs-panel" data-panel hidden>
+    <div class="cs-bar">
+      <div class="cs-nav">
+        <button class="cs-round" type="button" aria-label="이전" data-prev>‹</button>
+        <strong class="cs-period" data-period></strong>
+        <button class="cs-round" type="button" aria-label="다음" data-next>›</button>
+      </div>
+      <div class="cs-bar__right">
+        <div class="cs-tabs" role="group" aria-label="보기 방식">
+          <button class="cs-tab" type="button" aria-pressed="true" data-view-month>월간</button>
+          <button class="cs-tab" type="button" aria-pressed="false" data-view-week>주간</button>
+        </div>
+        <button class="cs-ghost" type="button" data-today>오늘</button>
+        <button class="cs-ghost" type="button" data-reload>새로 고침</button>
+      </div>
+    </div>
+
+    <p class="cs-status" data-status role="status">일정을 읽고 있습니다…</p>
+
+    <div class="cs-cal" data-cal></div>
+
+    <section class="cs-day">
+      <h3 class="cs-day__title" data-day-title>날짜를 누르면 그날 일정이 보입니다</h3>
+      <div class="cs-day__list" data-day-list></div>
+    </section>
+
+    <details class="cs-new">
+      <summary class="cs-new__head">일정 등록하기</summary>
+
+      <p class="cs-help">
+        아래를 채우고 <b>제목·본문 복사</b>를 누른 뒤 <b>게시판 글쓰기</b>에 붙여넣어 저장하면,
+        새로 고침할 때 달력에 자동으로 나타납니다. 사진은 게시판 본문에
+        <b>BEFORE</b>·<b>AFTER</b> 자리에 올리세요.
+      </p>
+
+      <div class="cs-row">
+        <div class="cs-field">
+          <label class="cs-label" for="cs-date">날짜</label>
+          <input class="cs-input" id="cs-date" type="date" data-new-date>
+        </div>
+        <div class="cs-field">
+          <label class="cs-label" for="cs-time">시간</label>
+          <input class="cs-input" id="cs-time" type="time" data-new-time>
+        </div>
+      </div>
+
+      <div class="cs-field">
+        <span class="cs-label">작업항목 (여러 개 고를 수 있습니다)</span>
+        <div class="cs-checks" data-new-works></div>
+      </div>
+
+      <div class="cs-field">
+        <label class="cs-label" for="cs-site">현장명 · 고객명</label>
+        <input class="cs-input" id="cs-site" type="text" placeholder="예) 카카오프렌즈 지곡점" data-new-site>
+      </div>
+
+      <div class="cs-row">
+        <div class="cs-field">
+          <label class="cs-label" for="cs-owner">담당자</label>
+          <select class="cs-input" id="cs-owner" data-new-owner></select>
+        </div>
+        <div class="cs-field">
+          <label class="cs-label" for="cs-status">진행상태</label>
+          <select class="cs-input" id="cs-status" data-new-status>
+            <option value="예정">예정</option>
+            <option value="진행중">진행중</option>
+            <option value="완료">완료</option>
+            <option value="보류">보류</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="cs-field">
+        <label class="cs-label" for="cs-place">장소 · 위치</label>
+        <input class="cs-input" id="cs-place" type="text" placeholder="예) 수원시 권선구 서호동로26번길 19" data-new-place>
+      </div>
+
+      <div class="cs-field">
+        <label class="cs-label" for="cs-note">진행사항 · 메모</label>
+        <textarea class="cs-input cs-area" id="cs-note" rows="3" placeholder="예) 옥상 크랙 3군데 확인, 자재 미리 올려 둠" data-new-note></textarea>
+      </div>
+
+      <div class="cs-out">
+        <label class="cs-label" for="cs-title-out">① 게시판 제목</label>
+        <textarea class="cs-input cs-area" id="cs-title-out" rows="2" readonly data-out-title></textarea>
+        <button class="cs-btn" type="button" data-copy-title>제목 복사</button>
+      </div>
+
+      <div class="cs-out">
+        <label class="cs-label" for="cs-body-out">② 게시판 본문</label>
+        <textarea class="cs-input cs-area" id="cs-body-out" rows="12" readonly data-out-body></textarea>
+        <button class="cs-btn" type="button" data-copy-body>본문 복사</button>
+      </div>
+
+      <p class="cs-copied" data-copied hidden></p>
+      <a class="cs-link" href="/" data-write-link>③ 게시판 글쓰기 열기 →</a>
+    </details>
+  </div>
+</section>
+
+<script>
+{
+/* 청명 일정 달력 — 아임웹 게시판에 쌓인 일정 글을 읽어 월간·주간 달력으로 보여 준다.
+   글 제목 규칙:  날짜 시간 | 작업항목 | 현장명 | 담당자 | 장소 | 진행상태
+   예) 2026-08-14 09:00 | 옥상방수, 누수탐지 | 카카오프렌즈 지곡점 | 송경훈 | 수원 권선구 | 예정 */
+
+const DAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
+const STATES = ["예정", "진행중", "완료", "보류", "취소"];
+const TITLE_HEAD = /(\d{4})-(\d{1,2})-(\d{1,2})(?:\s+(\d{1,2}):(\d{2}))?\s*\|/;
+const SKIP_IMAGE = /icon|logo|blank|sprite|btn_|profile/i;
+const MOBILE_MAX = 620;
+const NARROW_MAX = 380;
+
+const root = document.querySelector("[data-schedule-root]");
+const pick = (name) => root.querySelector(`[data-${name}]`);
+
+const setting = (name) => String(root.getAttribute(`data-${name}`) || "").trim();
+const listOf = (name) => {
+  const parts = setting(name).split(",");
+  const out = [];
+  for (let i = 0; i < parts.length; i += 1) {
+    const value = parts[i].trim();
+    if (value !== "") out.push(value);
+  }
+  return out;
+};
+
+const works = listOf("works");
+const owners = listOf("owners");
+
+let items = [];
+let cursor = new Date();
+let chosen = "";
+let loading = false;
+
+/* ------------------------------------------------------------------ 날짜 */
+
+const pad = (value) => `0${value}`.slice(-2);
+const keyOf = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+const todayKey = () => keyOf(new Date());
+const addDays = (date, count) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + count);
+const weekStart = (date) => addDays(date, -date.getDay());
+const fromKey = (key) => {
+  const parts = key.split("-");
+  return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+};
+const longDate = (key) => {
+  const date = fromKey(key);
+  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 (${DAY_NAMES[date.getDay()]})`;
+};
+
+/* -------------------------------------------------------- 게시판 글 읽기 */
+
+const workClass = (name) => {
+  const at = works.indexOf(name);
+  return at >= 0 && at < 6 ? `w${at}` : "w9";
+};
+
+/** 제목 한 줄을 일정으로 바꾼다. 규칙에 맞지 않으면 null */
+const parseTitle = (text) => {
+  const clean = String(text || "").replace(/\s+/g, " ").trim();
+  const found = clean.match(TITLE_HEAD);
+  if (!found) return null;
+
+  const parts = clean.slice(found.index).split("|");
+  const head = parts[0].trim().split(/\s+/);
+  const day = head[0].split("-");
+  const picked = [];
+  const names = (parts[1] || "").split(/[,·+/]/);
+  for (let i = 0; i < names.length; i += 1) {
+    const name = names[i].trim();
+    if (name !== "") picked.push(name);
+  }
+  const state = (parts[5] || "").trim();
+
+  return {
+    key: `${day[0]}-${pad(Number(day[1]))}-${pad(Number(day[2]))}`,
+    time: head.length > 1 ? head[1] : "",
+    works: picked,
+    site: (parts[2] || "").trim(),
+    owner: (parts[3] || "").trim(),
+    place: (parts[4] || "").trim(),
+    state: STATES.indexOf(state) >= 0 ? state : "",
+    url: "",
+    shots: null,
+  };
+};
+
+/** 게시판 목록 HTML에서 일정 글을 골라낸다 */
+const readList = (html, seen) => {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const links = doc.querySelectorAll("a[href]");
+  const found = [];
+  for (let i = 0; i < links.length; i += 1) {
+    const link = links[i];
+    const item = parseTitle(link.textContent);
+    if (!item) continue;
+    const href = link.getAttribute("href") || "";
+    if (href !== "" && seen[href] === true) continue;
+    if (href !== "") seen[href] = true;
+    item.url = href;
+    found.push(item);
+  }
+  return { items: found, links: links.length };
+};
+
+const pageUrl = (base, page) => {
+  if (page <= 1) return base;
+  return base + (base.indexOf("?") >= 0 ? "&" : "?") + `page=${page}`;
+};
+
+const say = (text, bad) => {
+  const box = pick("status");
+  box.textContent = text;
+  if (bad) box.setAttribute("data-bad", "yes");
+  else box.removeAttribute("data-bad");
+};
+
+const load = () => {
+  const base = setting("board");
+  if (base === "") {
+    say("게시판 주소가 비어 있습니다. 위젯 설정에서 일정 게시판 주소를 넣어 주세요.", true);
+    return;
+  }
+  if (loading) return;
+  loading = true;
+  say("일정을 읽고 있습니다…");
+
+  const pages = Math.max(1, Math.min(10, Number(setting("pages")) || 1));
+  const seen = {};
+  const gathered = [];
+  let links = 0;
+  let failed = "";
+
+  const step = (page) => {
+    if (page > pages) {
+      loading = false;
+      items = gathered;
+      items.sort((a, b) => (a.key + a.time < b.key + b.time ? -1 : 1));
+      if (items.length > 0) {
+        say(`게시판에서 일정 ${items.length}개를 읽었습니다.`);
+      } else if (failed !== "") {
+        say(`게시판을 읽지 못했습니다 (${failed}). 주소가 맞는지, 같은 사이트 안의 주소인지 확인해 주세요.`, true);
+      } else {
+        say(`게시판은 열렸지만(링크 ${links}개) 규칙에 맞는 일정 글이 없습니다. `
+          + "글 제목이 «2026-08-14 09:00 | 옥상방수 | 현장명 | 담당자 | 장소 | 예정» 형태인지 확인해 주세요.", true);
+      }
+      draw();
+      return;
+    }
+    fetch(pageUrl(base, page), { credentials: "same-origin" })
+      .then((response) => {
+        if (!response.ok) throw new Error(`${response.status}`);
+        return response.text();
+      })
+      .then((html) => {
+        const batch = readList(html, seen);
+        links += batch.links;
+        for (let i = 0; i < batch.items.length; i += 1) gathered.push(batch.items[i]);
+        step(page + 1);
+      })
+      .catch((error) => {
+        if (failed === "") failed = String(error.message || error);
+        step(pages + 1);
+      });
+  };
+  step(1);
+};
+
+/* -------------------------------------------------------------- 사진 읽기 */
+
+const readShots = (html) => {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+  const shots = [];
+  let tag = "사진";
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (node.nodeType === 3) {
+      const text = node.nodeValue.toUpperCase();
+      if (text.indexOf("BEFORE") >= 0) tag = "BEFORE";
+      else if (text.indexOf("AFTER") >= 0) tag = "AFTER";
+    } else if (node.tagName === "IMG") {
+      const src = node.getAttribute("src") || "";
+      const width = Number(node.getAttribute("width") || 0);
+      if (src === "" || SKIP_IMAGE.test(src) || (width > 0 && width < 60)) continue;
+      shots.push({ tag: tag, src: node.src || src });
+    }
+  }
+  return shots;
+};
+
+const showShots = (item, box, button) => {
+  button.textContent = "사진 불러오는 중…";
+  fetch(item.url, { credentials: "same-origin" })
+    .then((response) => response.text())
+    .then((html) => {
+      item.shots = readShots(html);
+      button.textContent = item.shots.length > 0 ? "사진" : "사진 없음";
+      paintShots(item, box);
+    })
+    .catch(() => {
+      button.textContent = "사진을 읽지 못했습니다";
+    });
+};
+
+const paintShots = (item, box) => {
+  box.textContent = "";
+  if (!item.shots) return;
+  for (let i = 0; i < item.shots.length; i += 1) {
+    const shot = item.shots[i];
+    const wrap = document.createElement("div");
+    wrap.className = "cs-shot";
+    const image = document.createElement("img");
+    image.setAttribute("src", shot.src);
+    image.setAttribute("alt", `${item.site} ${shot.tag}`);
+    image.setAttribute("loading", "lazy");
+    const tag = document.createElement("span");
+    tag.className = "cs-shot__tag";
+    tag.textContent = shot.tag;
+    wrap.appendChild(image);
+    wrap.appendChild(tag);
+    box.appendChild(wrap);
+  }
+};
+
+/* ---------------------------------------------------------------- 그리기 */
+
+const onKey = (key) => {
+  const out = [];
+  for (let i = 0; i < items.length; i += 1) if (items[i].key === key) out.push(items[i]);
+  return out;
+};
+
+const chipText = (item) => {
+  const head = item.time !== "" ? `${item.time} ` : "";
+  const name = item.site !== "" ? item.site : (item.works[0] || "일정");
+  return `${head}${name}`;
+};
+
+const chip = (item) => {
+  const span = document.createElement("span");
+  span.className = `cs-chip cs-chip--${workClass(item.works[0] || "")}`;
+  span.textContent = chipText(item);
+  return span;
+};
+
+const monthView = (box) => {
+  const grid = document.createElement("div");
+  grid.className = "cs-grid";
+  for (let i = 0; i < 7; i += 1) {
+    const head = document.createElement("div");
+    head.className = "cs-head";
+    if (i === 0) head.className += " cs-head--sun";
+    if (i === 6) head.className += " cs-head--sat";
+    head.textContent = DAY_NAMES[i];
+    grid.appendChild(head);
+  }
+
+  const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+  const start = weekStart(first);
+  const today = todayKey();
+  for (let i = 0; i < 42; i += 1) {
+    const date = addDays(start, i);
+    const key = keyOf(date);
+    const cell = document.createElement("button");
+    cell.className = "cs-cell";
+    cell.setAttribute("type", "button");
+    if (date.getMonth() !== cursor.getMonth()) cell.className += " cs-cell--pad";
+    if (key === today) cell.className += " cs-cell--today";
+    if (key === chosen) cell.className += " cs-cell--on";
+
+    const num = document.createElement("span");
+    num.className = "cs-cell__num";
+    if (date.getDay() === 0) num.className += " cs-cell__num--sun";
+    if (date.getDay() === 6) num.className += " cs-cell__num--sat";
+    num.textContent = String(date.getDate());
+    cell.appendChild(num);
+
+    const day = onKey(key);
+    const limit = day.length > 3 ? 2 : day.length;
+    for (let n = 0; n < limit; n += 1) cell.appendChild(chip(day[n]));
+    if (day.length > limit) {
+      const more = document.createElement("span");
+      more.className = "cs-more";
+      more.textContent = `+${day.length - limit}건`;
+      cell.appendChild(more);
+    }
+    cell.addEventListener("click", () => choose(key));
+    grid.appendChild(cell);
+  }
+  box.appendChild(grid);
+};
+
+const weekView = (box) => {
+  const wrap = document.createElement("div");
+  wrap.className = "cs-week";
+  const start = weekStart(cursor);
+  const today = todayKey();
+  for (let i = 0; i < 7; i += 1) {
+    const date = addDays(start, i);
+    const key = keyOf(date);
+    const row = document.createElement("button");
+    row.className = "cs-wrow";
+    row.setAttribute("type", "button");
+    if (key === today) row.className += " cs-wrow--today";
+    if (key === chosen) row.className += " cs-wrow--on";
+
+    const label = document.createElement("span");
+    label.className = "cs-wrow__day";
+    label.textContent = `${date.getMonth() + 1}/${date.getDate()}`;
+    const small = document.createElement("small");
+    small.textContent = DAY_NAMES[date.getDay()];
+    label.appendChild(small);
+
+    const body = document.createElement("span");
+    body.className = "cs-wrow__body";
+    const day = onKey(key);
+    if (day.length === 0) {
+      const none = document.createElement("span");
+      none.className = "cs-wrow__empty";
+      none.textContent = "일정 없음";
+      body.appendChild(none);
+    }
+    for (let n = 0; n < day.length; n += 1) body.appendChild(chip(day[n]));
+
+    row.appendChild(label);
+    row.appendChild(body);
+    row.addEventListener("click", () => choose(key));
+    wrap.appendChild(row);
+  }
+  box.appendChild(wrap);
+};
+
+const kv = (name, value) => {
+  const line = document.createElement("div");
+  line.className = "cs-kv";
+  const label = document.createElement("span");
+  label.textContent = name;
+  const text = document.createElement("b");
+  text.textContent = value;
+  line.appendChild(label);
+  line.appendChild(text);
+  return line;
+};
+
+const card = (item) => {
+  const box = document.createElement("article");
+  box.className = `cs-item cs-item--${workClass(item.works[0] || "")}`;
+
+  const top = document.createElement("div");
+  top.className = "cs-item__top";
+  if (item.time !== "") {
+    const time = document.createElement("span");
+    time.className = "cs-item__time";
+    time.textContent = item.time;
+    top.appendChild(time);
+  }
+  if (item.site !== "") {
+    const site = document.createElement("span");
+    site.className = "cs-item__site";
+    site.textContent = item.site;
+    top.appendChild(site);
+  }
+  for (let i = 0; i < item.works.length; i += 1) {
+    const badge = document.createElement("span");
+    badge.className = `cs-badge cs-badge--${workClass(item.works[i])}`;
+    badge.textContent = item.works[i];
+    top.appendChild(badge);
+  }
+  if (item.state !== "") {
+    const state = document.createElement("span");
+    state.className = "cs-state";
+    state.textContent = item.state;
+    top.appendChild(state);
+  }
+  box.appendChild(top);
+
+  if (item.owner !== "") box.appendChild(kv("담당", item.owner));
+  if (item.place !== "") box.appendChild(kv("장소", item.place));
+
+  const shots = document.createElement("div");
+  shots.className = "cs-shots";
+
+  const foot = document.createElement("div");
+  foot.className = "cs-item__foot";
+  if (item.url !== "") {
+    const open = document.createElement("a");
+    open.className = "cs-ghost";
+    open.setAttribute("href", item.url);
+    open.setAttribute("target", "_blank");
+    open.setAttribute("rel", "noopener");
+    open.textContent = "게시글 보기 · 진행사항 수정";
+    foot.appendChild(open);
+
+    const photos = document.createElement("button");
+    photos.className = "cs-ghost";
+    photos.setAttribute("type", "button");
+    photos.textContent = "BEFORE / AFTER 사진 보기";
+    photos.addEventListener("click", () => {
+      if (item.shots) paintShots(item, shots);
+      else showShots(item, shots, photos);
+    });
+    foot.appendChild(photos);
+  }
+  box.appendChild(foot);
+  box.appendChild(shots);
+  return box;
+};
+
+const dayView = () => {
+  const list = pick("day-list");
+  list.textContent = "";
+  if (chosen === "") {
+    pick("day-title").textContent = "날짜를 누르면 그날 일정이 보입니다";
+    return;
+  }
+  const day = onKey(chosen);
+  pick("day-title").textContent = `${longDate(chosen)} · ${day.length}건`;
+  if (day.length === 0) {
+    const none = document.createElement("p");
+    none.className = "cs-empty";
+    none.textContent = "이 날은 등록된 일정이 없습니다.";
+    list.appendChild(none);
+    return;
+  }
+  for (let i = 0; i < day.length; i += 1) list.appendChild(card(day[i]));
+};
+
+const draw = () => {
+  const box = pick("cal");
+  box.textContent = "";
+  if (root.getAttribute("data-view") === "week") {
+    const start = weekStart(cursor);
+    const end = addDays(start, 6);
+    pick("period").textContent =
+      `${start.getFullYear()}년 ${start.getMonth() + 1}월 ${start.getDate()}일 ~ ${end.getMonth() + 1}월 ${end.getDate()}일`;
+    weekView(box);
+  } else {
+    pick("period").textContent = `${cursor.getFullYear()}년 ${cursor.getMonth() + 1}월`;
+    monthView(box);
+  }
+  dayView();
+};
+
+const choose = (key) => {
+  chosen = key;
+  draw();
+};
+
+const move = (step) => {
+  if (root.getAttribute("data-view") === "week") cursor = addDays(cursor, 7 * step);
+  else cursor = new Date(cursor.getFullYear(), cursor.getMonth() + step, 1);
+  draw();
+};
+
+const setView = (mode) => {
+  root.setAttribute("data-view", mode);
+  pick("view-month").setAttribute("aria-pressed", mode === "month" ? "true" : "false");
+  pick("view-week").setAttribute("aria-pressed", mode === "week" ? "true" : "false");
+  draw();
+};
+
+/* ------------------------------------------------------------ 등록 도우미 */
+
+const chosenWorks = () => {
+  const boxes = pick("new-works").querySelectorAll("input");
+  const out = [];
+  for (let i = 0; i < boxes.length; i += 1) {
+    if (boxes[i].checked) out.push(boxes[i].getAttribute("data-work"));
+  }
+  return out;
+};
+
+const compose = () => {
+  const date = pick("new-date").value;
+  const time = pick("new-time").value;
+  const picked = chosenWorks();
+  const site = pick("new-site").value.trim();
+  const owner = pick("new-owner").value;
+  const place = pick("new-place").value.trim();
+  const state = pick("new-status").value;
+  const note = pick("new-note").value.trim();
+  const dash = (text) => (text === "" ? "-" : text);
+
+  pick("out-title").value = date === "" ? "날짜를 먼저 고르세요" :
+    `${date}${time !== "" ? ` ${time}` : ""} | ${dash(picked.join(", "))} | ${dash(site)} | ${dash(owner)} | ${dash(place)} | ${state}`;
+
+  pick("out-body").value = [
+    "[일정]",
+    `날짜: ${dash(date)}`,
+    `시간: ${dash(time)}`,
+    `작업항목: ${dash(picked.join(", "))}`,
+    `현장: ${dash(site)}`,
+    `담당자: ${dash(owner)}`,
+    `장소: ${dash(place)}`,
+    `진행상태: ${state}`,
+    "",
+    "[진행사항]",
+    note !== "" ? note : "(작업이 진행될 때마다 이 아래에 날짜와 함께 적어 주세요)",
+    "",
+    "[BEFORE]",
+    "(작업 전 사진을 이 아래에 올려 주세요)",
+    "",
+    "[AFTER]",
+    "(작업 후 사진을 이 아래에 올려 주세요)",
+  ].join("\n");
+};
+
+const told = (text) => {
+  const box = pick("copied");
+  box.textContent = text;
+  box.hidden = false;
+};
+
+const copyFrom = (area, name) => {
+  const text = area.value;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(
+      () => told(`${name}을 복사했습니다. 게시판 글쓰기에 붙여넣으세요.`),
+      () => {
+        area.select();
+        told(`${name}을 선택해 두었습니다. Command + C 를 누르세요.`);
+      }
+    );
+    return;
+  }
+  area.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch (error) { ok = false; }
+  told(ok ? `${name}을 복사했습니다.` : `${name}을 선택해 두었습니다. Command + C 를 누르세요.`);
+};
+
+const buildForm = () => {
+  const box = pick("new-works");
+  for (let i = 0; i < works.length; i += 1) {
+    const label = document.createElement("label");
+    label.className = "cs-check";
+    const input = document.createElement("input");
+    input.setAttribute("type", "checkbox");
+    input.setAttribute("data-work", works[i]);
+    input.addEventListener("change", compose);
+    const text = document.createElement("span");
+    text.textContent = works[i];
+    label.appendChild(input);
+    label.appendChild(text);
+    box.appendChild(label);
+  }
+
+  const owner = pick("new-owner");
+  for (let i = 0; i < owners.length; i += 1) {
+    const option = document.createElement("option");
+    option.setAttribute("value", owners[i]);
+    option.textContent = owners[i];
+    owner.appendChild(option);
+  }
+
+  const write = setting("write") !== "" ? setting("write") : setting("board");
+  const link = pick("write-link");
+  link.setAttribute("href", write);
+  link.setAttribute("target", "_blank");
+  link.setAttribute("rel", "noopener");
+};
+
+/* ------------------------------------------------------------------ 폭·게이트 */
+
+const applyWidth = () => {
+  const width = root.offsetWidth || window.innerWidth || 0;
+  if (width <= 0) return;
+  if (width < MOBILE_MAX) root.classList.add("is-mobile");
+  else root.classList.remove("is-mobile");
+  if (width < NARROW_MAX) root.classList.add("is-narrow");
+  else root.classList.remove("is-narrow");
+};
+
+const openPanel = () => {
+  root.setAttribute("data-state", "open");
+  pick("panel").hidden = false;
+  pick("gate").hidden = true;
+  applyWidth();
+  draw();
+  load();
+};
+
+const checkPin = () => {
+  const wanted = setting("pin");
+  const typed = String(pick("pin-input").value || "").trim();
+  if (wanted === "" || typed === wanted) {
+    pick("pin-error").hidden = true;
+    openPanel();
+    return;
+  }
+  pick("pin-error").hidden = false;
+};
+
+const setup = () => {
+  if (!root) return;
+
+  chosen = todayKey();
+  pick("new-date").value = chosen;
+  buildForm();
+  compose();
+
+  pick("pin-submit").addEventListener("click", checkPin);
+  pick("pin-input").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") checkPin();
+  });
+
+  pick("prev").addEventListener("click", () => move(-1));
+  pick("next").addEventListener("click", () => move(1));
+  pick("today").addEventListener("click", () => {
+    cursor = new Date();
+    chosen = todayKey();
+    draw();
+  });
+  pick("reload").addEventListener("click", load);
+  pick("view-month").addEventListener("click", () => setView("month"));
+  pick("view-week").addEventListener("click", () => setView("week"));
+
+  const watched = ["new-date", "new-time", "new-site", "new-owner", "new-place", "new-status", "new-note"];
+  for (let i = 0; i < watched.length; i += 1) {
+    pick(watched[i]).addEventListener("input", compose);
+    pick(watched[i]).addEventListener("change", compose);
+  }
+  pick("copy-title").addEventListener("click", () => copyFrom(pick("out-title"), "제목"));
+  pick("copy-body").addEventListener("click", () => copyFrom(pick("out-body"), "본문"));
+
+  applyWidth();
+  if (typeof ResizeObserver === "function") {
+    const watcher = new ResizeObserver(() => applyWidth());
+    watcher.observe(root);
+  }
+  window.addEventListener("resize", applyWidth);
+
+  if (setting("pin") === "") openPanel();
+};
+
+setup();
+}
+</script>
