@@ -98,7 +98,13 @@
         <b class="iw-card__won" data-card-won>-</b>
         <span class="iw-card__hangul" data-card-hangul></span>
       </div>
+      <p class="iw-card__help">
+        <b>단가</b> 칸을 눌러 고치면 금액·합계·견적서가 바로 바뀝니다.
+        빈칸으로 두면 그 품목은 견적서에서 빠집니다.
+        「단가 조정」을 켜 두면 방수코트 3개는 자동으로 계산되어 고칠 수 없습니다.
+      </p>
       <ul class="iw-list" data-card-rows></ul>
+      <button class="iw-reset" type="button" data-reset>기본 단가로 되돌리기</button>
       <div class="iw-card">
         <span class="iw-card__label">공사 · 공급자</span>
         <div class="iw-kv"><span>고객</span><b data-card-customer></b></div>
@@ -114,6 +120,21 @@
       <div class="iw-card">
         <span class="iw-card__label">특 이 사 항</span>
         <div class="iw-cardnote" data-card-notes></div>
+      </div>
+    </div>
+
+    <div hidden>
+      <div data-notes-roof>
+        <span>* 공사명: 옥상 방수 공사</span>
+        <span>* 공사일자: 협의(1-2일 소요)</span>
+        <span>* 작업방법: 바탕면 정리 → 고압세척 → 프라이머 → 크랙보수 → 하도 작업 → 중도 작업 → 상도작업 → 검수</span>
+        <span>* 보증기간: 작업구간에 한하여 2년 보증. (다른 부분에 의한 누수는 제외)</span>
+      </div>
+      <div data-notes-wall>
+        <span>* 공사명: 외벽 방수 공사</span>
+        <span>* 공사일자: 협의(1-2일 소요)</span>
+        <span>* 작업방법: 바탕면 정리 → 프라이머 → 크랙보수 → 표면방수제 → 구조 보강 작업</span>
+        <span>* 보증기간: 작업구간에 한하여 2년 보증. (다른 부분에 의한 누수는 제외)</span>
       </div>
     </div>
 

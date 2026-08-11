@@ -1,6 +1,5 @@
-/* 견적서 생성기 — 평수를 넣으면 회사 양식대로 견적서를 채운다.
-   금액 계산은 파이썬 생성기(quote.py)와 같은 규칙을 쓴다.
-   화면 폭이 아니라 위젯이 놓인 칸의 너비를 재서 모바일 배치로 바꾼다. */
+/* 견적서 생성기 — 평수를 넣으면 회사 양식대로 채운다. 계산 규칙은 quote.py와 같다.
+   요약 보기에서 단가를 고칠 수 있고, 칸의 너비를 재서 모바일 배치로 바꾼다. */
 
 const PYEONG_TO_M2 = 3.3058;
 const AMOUNT_STEP = 1000; // 조정한 금액은 1,000원 단위
@@ -10,6 +9,7 @@ const SMALL_UNITS = ["", "십", "백", "천"];
 const BIG_UNITS = ["", "만", "억", "조"];
 
 const MOBILE_MAX = 620; // 이보다 좁으면 모바일 배치
+const NARROW_MAX = 360; // 아이폰 SE처럼 아주 좁으면 글자를 한 단계 더 줄인다
 const SHEET_PX = 718; // 견적서 폭 190mm를 픽셀로 환산한 값
 const FIT_STEPS = [95, 90, 85, 80, 75, 70, 65, 60, 55, 50, 45, 40];
 
@@ -22,12 +22,7 @@ const BRANDS = {
     owner: "송경훈",
     phone: "010-4156-4043",
     project: ["옥상", "바닥 방수"],
-    notes: [
-      "* 공사명: 옥상 방수 공사",
-      "* 공사일자: 협의(1-2일 소요)",
-      "* 작업방법: 바탕면 정리 → 고압세척 → 프라이머 → 크랙보수 → 하도 작업 → 중도 작업 → 상도작업 → 검수",
-      "* 보증기간: 작업구간에 한하여 2년 보증. (다른 부분에 의한 누수는 제외)",
-    ],
+    notes: "notes-roof",
     items: [
       { name: "바탕면작업", key: "roof-base", perArea: true },
       { name: "고압세척", key: "roof-wash", perArea: true },
@@ -35,8 +30,8 @@ const BRANDS = {
       { name: "하도 방수코트", key: "roof-coat1", perArea: true, balance: true },
       { name: "중도 방수코트", key: "roof-coat2", perArea: true, balance: true },
       { name: "상도 방수코트", key: "roof-coat3", perArea: true, balance: true },
-      { name: "폐기물처리", key: "roof-waste", perArea: false },
-      { name: "보양•청소", key: "roof-clean", perArea: false },
+      { name: "폐기물처리", key: "roof-waste" },
+      { name: "보양•청소", key: "roof-clean" },
     ],
   },
   wall: {
@@ -47,18 +42,13 @@ const BRANDS = {
     owner: "송경훈",
     phone: "010-4156-4043",
     project: ["외벽방수"],
-    notes: [
-      "* 공사명: 외벽 방수 공사",
-      "* 공사일자: 협의(1-2일 소요)",
-      "* 작업방법: 바탕면 정리 → 프라이머 → 크랙보수 → 표면방수제 → 구조 보강 작업",
-      "* 보증기간: 작업구간에 한하여 2년 보증. (다른 부분에 의한 누수는 제외)",
-    ],
+    notes: "notes-wall",
     items: [
       { name: "크랙보수", key: "wall-crack", perArea: true, balance: true },
       { name: "표면 방수제 도포", key: "wall-coat", perArea: true, balance: true },
-      { name: "스카이 차량", key: "wall-sky", perArea: false },
-      { name: "보양•청소", key: "wall-clean", perArea: false },
-      { name: "잡자재비용", key: "wall-etc", perArea: false },
+      { name: "스카이 차량", key: "wall-sky" },
+      { name: "보양•청소", key: "wall-clean" },
+      { name: "잡자재비용", key: "wall-etc" },
     ],
   },
 };
@@ -83,6 +73,13 @@ const sheetWrap = pick("sheet-wrap");
 const summaryTab = pick("view-summary");
 const sheetTab = pick("view-sheet");
 
+/* 요약 보기에서 고친 단가. 비어 있으면 설정 패널 값을 쓴다. */
+const overrides = {};
+const cardNodes = [];
+let builtFor = "";
+let totalNode = null;
+let finalNode = null;
+
 const toNumber = (text) => {
   const cleaned = String(text || "").replace(/[^\d.]/g, "");
   const value = parseFloat(cleaned);
@@ -90,6 +87,7 @@ const toNumber = (text) => {
 };
 
 const price = (key) => toNumber(root.getAttribute(`data-${key}`));
+const priceOf = (key) => (key in overrides ? overrides[key] : price(key));
 
 const won = (value) => Math.round(value).toLocaleString("ko-KR");
 
@@ -116,16 +114,16 @@ const koreanAmount = (value) => {
   return text;
 };
 
-/** 평수와 단가로 견적 줄을 만든다 */
+/** 품목마다 평수·단가로 줄을 만든다 (단가 0인 품목도 목록에는 남긴다) */
 const buildRows = (brand, area) => {
   const rows = [];
   for (let i = 0; i < brand.items.length; i += 1) {
     const spec = brand.items[i];
     const quantity = spec.perArea ? area : 1;
-    const unit = price(spec.key);
-    if (quantity <= 0 || unit <= 0) continue;
+    const unit = priceOf(spec.key);
     rows.push({
       name: spec.name,
+      key: spec.key,
       balance: spec.balance === true,
       quantity: quantity,
       unit: unit,
@@ -133,6 +131,15 @@ const buildRows = (brand, area) => {
     });
   }
   return rows;
+};
+
+/** 견적서에 실제로 올라가는 줄 (수량·단가가 있는 것만) */
+const billable = (rows) => {
+  const out = [];
+  for (let i = 0; i < rows.length; i += 1) {
+    if (rows[i].quantity > 0 && rows[i].unit > 0) out.push(rows[i]);
+  }
+  return out;
 };
 
 /** 최종 금액에 맞춰 조정 대상의 단가를 원래 비율대로 다시 나눈다 */
@@ -219,22 +226,21 @@ const renderRows = (rows, projectLines) => {
   body.appendChild(blank);
 };
 
-const renderNotes = (lines) => {
+/** 특이사항은 HTML에 적어 둔 문구를 그대로 옮겨 담는다 */
+const renderNotes = (key) => {
+  const lines = pick(key).children;
   const boxes = [pick("sheet-notes"), pick("card-notes")];
   for (let box = 0; box < boxes.length; box += 1) {
     boxes[box].innerHTML = "";
     for (let i = 0; i < lines.length; i += 1) {
-      const span = document.createElement("span");
-      span.textContent = lines[i];
-      boxes[box].appendChild(span);
+      boxes[box].appendChild(lines[i].cloneNode(true));
     }
   }
 };
 
-/** 요약 카드 한 줄 (품목 이름 · 수량×단가 · 금액) */
-const listItem = (name, calc, amount, extra) => {
+const listItem = (name, calc, className) => {
   const li = document.createElement("li");
-  li.className = extra ? `iw-listitem ${extra}` : "iw-listitem";
+  li.className = className ? `iw-listitem ${className}` : "iw-listitem";
   const title = document.createElement("span");
   title.className = "iw-listitem__name";
   title.textContent = name;
@@ -243,31 +249,85 @@ const listItem = (name, calc, amount, extra) => {
   detail.textContent = calc;
   const money = document.createElement("b");
   money.className = "iw-listitem__amount";
-  money.textContent = `${won(amount)}원`;
   li.appendChild(title);
   li.appendChild(detail);
   li.appendChild(money);
   return li;
 };
 
-/** 휴대폰에서 표 대신 읽는 요약 화면 */
-const renderCards = (rows, brand, subtotal, billed, area) => {
+const onPrice = (event) => {
+  overrides[event.target.getAttribute("data-price-key")] = toNumber(event.target.value);
+  render();
+};
+
+/** 요약 보기의 품목 목록을 만든다 (단가 칸이 들어간다) */
+const buildCardList = (rows) => {
   const list = pick("card-rows");
   list.innerHTML = "";
+  cardNodes.length = 0;
+
   for (let i = 0; i < rows.length; i += 1) {
     const row = rows[i];
-    const calc = `${quantityText(row.quantity)} × ${won(row.unit)}원`;
-    list.appendChild(listItem(row.name, calc, row.amount, ""));
-  }
-  if (rows.length > 0) {
-    list.appendChild(listItem("합계", "부가세 별도", subtotal, "iw-listitem--total"));
-    if (billed !== subtotal) {
-      list.appendChild(listItem("최종 네고 금액", "부가세 별도", billed, "iw-listitem--final"));
-    }
+    const li = listItem(row.name, "", "");
+    const calc = li.children[1];
+    calc.textContent = "";
+
+    const input = document.createElement("input");
+    input.className = "iw-price";
+    input.setAttribute("type", "text");
+    input.setAttribute("inputmode", "numeric");
+    input.setAttribute("aria-label", `${row.name} 단가`);
+    input.setAttribute("data-price-key", row.key);
+    input.value = row.unit > 0 ? String(row.unit) : "";
+    if (row.balance && matchInput.checked) input.setAttribute("disabled", "");
+    input.addEventListener("input", onPrice);
+
+    const unit = document.createElement("span");
+    unit.className = "iw-listitem__unit";
+    calc.appendChild(input);
+    calc.appendChild(unit);
+    list.appendChild(li);
+    cardNodes.push({ input: input, unit: unit, amount: li.children[2] });
   }
 
-  pick("card-won").textContent = area > 0 ? `${won(billed)}원` : "-";
-  pick("card-hangul").textContent = area > 0 ? `일금 ${koreanAmount(billed)}원정` : "";
+  totalNode = listItem("합계", "부가세 별도", "iw-listitem--total");
+  finalNode = listItem("최종 네고 금액", "부가세 별도", "iw-listitem--final");
+  list.appendChild(totalNode);
+  list.appendChild(finalNode);
+};
+
+/** 만들어 둔 목록에 숫자만 다시 써넣는다 (입력 중인 칸은 건드리지 않는다) */
+const paintCards = (rows, subtotal, billed) => {
+  for (let i = 0; i < cardNodes.length && i < rows.length; i += 1) {
+    const node = cardNodes[i];
+    const row = rows[i];
+    const live = row.quantity > 0 && row.unit > 0;
+    node.unit.textContent = row.quantity > 0 ? `원 × ${quantityText(row.quantity)}` : "원";
+    node.amount.textContent = live ? `${won(row.amount)}원` : "-";
+    if (node.input.getAttribute("disabled") !== null) {
+      node.input.value = row.unit > 0 ? String(row.unit) : "";
+    }
+  }
+  totalNode.children[2].textContent = subtotal > 0 ? `${won(subtotal)}원` : "-";
+  finalNode.children[2].textContent = billed > 0 ? `${won(billed)}원` : "-";
+};
+
+const dateText = (value) => {
+  const parts = String(value || "").split("-");
+  if (parts.length !== 3) return "";
+  return `${parts[0]} 년 ${Number(parts[1])} 월 ${Number(parts[2])}일`;
+};
+
+const renderCards = (rows, brand, subtotal, billed) => {
+  const signature = `${workSelect.value}|${matchInput.checked ? 1 : 0}`;
+  if (signature !== builtFor) {
+    buildCardList(rows);
+    builtFor = signature;
+  }
+  paintCards(rows, subtotal, billed);
+
+  pick("card-won").textContent = billed > 0 ? `${won(billed)}원` : "-";
+  pick("card-hangul").textContent = billed > 0 ? `일금 ${koreanAmount(billed)}원정` : "";
   pick("card-customer").textContent = customerInput.value.trim();
   pick("card-date").textContent = dateText(dateInput.value);
   pick("card-project").textContent = brand.project.join(" ");
@@ -275,12 +335,6 @@ const renderCards = (rows, brand, subtotal, billed, area) => {
   pick("card-biz").textContent = brand.biz;
   pick("card-owner").textContent = brand.owner;
   pick("card-phone").textContent = brand.phone;
-};
-
-const dateText = (value) => {
-  const parts = String(value || "").split("-");
-  if (parts.length !== 3) return "";
-  return `${parts[0]} 년 ${Number(parts[1])} 월 ${Number(parts[2])}일`;
 };
 
 const render = () => {
@@ -291,15 +345,16 @@ const render = () => {
   areaHint.textContent = area > 0 ? `≈ ${(area * PYEONG_TO_M2).toFixed(1)}㎡` : "";
 
   const rows = buildRows(brand, area);
+  const paid = billable(rows);
   let warning = "";
   if (matchInput.checked && asked > 0 && area > 0) {
-    warning = matchToTotal(rows, asked);
+    warning = matchToTotal(paid, asked);
   }
   warnBox.textContent = warning;
   warnBox.hidden = warning === "";
 
   let subtotal = 0;
-  for (let i = 0; i < rows.length; i += 1) subtotal += rows[i].amount;
+  for (let i = 0; i < paid.length; i += 1) subtotal += paid[i].amount;
   const billed = asked > 0 ? asked : subtotal;
 
   pick("sheet-date").textContent = dateText(dateInput.value);
@@ -312,13 +367,20 @@ const render = () => {
   pick("sheet-owner").textContent = brand.owner;
   pick("sheet-phone").textContent = brand.phone;
   pick("sheet-hangul").textContent =
-    area > 0 ? `일금 ${koreanAmount(billed)}원정 ₩${won(billed)}` : "";
-  pick("sheet-subtotal").textContent = area > 0 ? won(subtotal) : "";
-  pick("sheet-final").textContent = area > 0 ? won(billed) : "";
+    subtotal > 0 ? `일금 ${koreanAmount(billed)}원정 ₩${won(billed)}` : "";
+  pick("sheet-subtotal").textContent = subtotal > 0 ? won(subtotal) : "";
+  pick("sheet-final").textContent = subtotal > 0 ? won(billed) : "";
 
-  renderRows(rows, brand.project);
+  renderRows(paid, brand.project);
   renderNotes(brand.notes);
-  renderCards(rows, brand, subtotal, billed, area);
+  renderCards(rows, brand, subtotal, billed);
+};
+
+const resetPrices = () => {
+  const keys = Object.keys(overrides);
+  for (let i = 0; i < keys.length; i += 1) delete overrides[keys[i]];
+  builtFor = "";
+  render();
 };
 
 /** 양식이 칸 안에 들어오도록 축소 비율 클래스를 하나 골라 붙인다 */
@@ -328,8 +390,7 @@ const setFit = (width) => {
   }
   if (width <= 0 || width >= SHEET_PX) return;
   const percent = Math.floor(((width - 2) / SHEET_PX) * 20) * 5;
-  const step = Math.max(40, Math.min(95, percent));
-  sheetWrap.classList.add(`iw-fit${step}`);
+  sheetWrap.classList.add(`iw-fit${Math.max(40, Math.min(95, percent))}`);
 };
 
 /** 위젯이 놓인 칸의 너비로 모바일 여부를 정한다 */
@@ -338,6 +399,8 @@ const applyWidth = () => {
   if (width <= 0) return;
   if (width < MOBILE_MAX) root.classList.add("is-mobile");
   else root.classList.remove("is-mobile");
+  if (width < NARROW_MAX) root.classList.add("is-narrow");
+  else root.classList.remove("is-narrow");
   setFit(width);
 };
 
@@ -354,6 +417,7 @@ const openPanel = () => {
   gate.hidden = true;
   render();
   applyWidth();
+  setView(root.offsetWidth > 0 && root.offsetWidth < MOBILE_MAX ? "summary" : "sheet");
 };
 
 const checkPin = () => {
@@ -392,6 +456,7 @@ const setup = () => {
 
   summaryTab.addEventListener("click", () => setView("summary"));
   sheetTab.addEventListener("click", () => setView("sheet"));
+  pick("reset").addEventListener("click", resetPrices);
 
   const watched = [workSelect, customerInput, areaInput, finalInput, matchInput, dateInput];
   for (let i = 0; i < watched.length; i += 1) {

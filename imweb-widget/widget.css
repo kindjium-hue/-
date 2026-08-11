@@ -13,6 +13,9 @@
   color: #1a1d21;
   font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
                "Malgun Gothic", sans-serif;
+  /* 아이폰 사파리가 글자를 제멋대로 키워 칸을 넘치게 하는 것을 막는다 */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 .iw-quote[data-state="open"] .iw-gate { display: none; }
@@ -53,7 +56,8 @@
 }
 .iw-quote .iw-input,
 .iw-quote .iw-btn,
-.iw-quote .iw-tab { box-sizing: border-box; }
+.iw-quote .iw-tab,
+.iw-quote .iw-price { box-sizing: border-box; }
 .iw-quote .iw-input {
   width: 100%;
   padding: 11px 12px;
@@ -104,14 +108,17 @@
   text-decoration: none;
 }
 
-/* ------------------------------------------ 보기 전환 · 요약 카드 (모바일용) */
+/* ------------------------------------------------- 보기 전환 · 요약(단가 조절) */
 
-.iw-quote .iw-viewtabs { display: none; }
-.iw-quote .iw-cards { display: none; }
-.iw-quote .iw-swipe { display: none; }
-
+.iw-quote .iw-viewtabs {
+  display: flex;
+  gap: 8px;
+  max-width: var(--sheet-w);
+  margin: 0 auto 14px;
+}
 .iw-quote .iw-tab {
   flex: 1 1 0;
+  min-width: 0;
   padding: 11px 8px;
   font-family: inherit;
   font-size: 14px;
@@ -127,6 +134,13 @@
   background: var(--accent);
   border-color: var(--accent);
 }
+
+.iw-quote .iw-cards { display: none; max-width: var(--sheet-w); margin: 0 auto; }
+.iw-quote .iw-swipe { display: none; }
+.iw-quote[data-view="summary"] .iw-cards { display: block; }
+.iw-quote[data-view="summary"] .iw-sheetwrap { display: none; }
+.iw-quote[data-view="sheet"] .iw-cards { display: none; }
+.iw-quote.is-mobile[data-view="sheet"] .iw-swipe { display: block; }
 
 .iw-quote .iw-card {
   margin-bottom: 12px;
@@ -151,6 +165,14 @@
   font-size: 13px;
   color: #4b5057;
   word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.iw-quote .iw-card__help {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+  word-break: keep-all;
 }
 .iw-quote .iw-kv {
   display: flex;
@@ -160,10 +182,15 @@
   border-top: 1px solid #f1f2f4;
 }
 .iw-quote .iw-kv span { flex: 0 0 66px; color: var(--muted); }
-.iw-quote .iw-kv b { flex: 1 1 auto; font-weight: 600; word-break: break-all; }
+.iw-quote .iw-kv b {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
 
 .iw-quote .iw-list {
-  margin: 0 0 12px;
+  margin: 0 0 10px;
   padding: 0;
   list-style: none;
   background: #ffffff;
@@ -174,12 +201,27 @@
 .iw-quote .iw-listitem {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 2px 10px;
+  gap: 4px 10px;
   padding: 10px 13px;
   border-top: 1px solid #f1f2f4;
 }
-.iw-quote .iw-listitem__name { font-size: 14px; font-weight: 600; word-break: keep-all; }
-.iw-quote .iw-listitem__calc { grid-row: 2; font-size: 12px; color: var(--muted); }
+.iw-quote .iw-listitem__name {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.iw-quote .iw-listitem__calc {
+  display: flex;
+  grid-row: 2;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.iw-quote .iw-listitem__unit { white-space: nowrap; }
 .iw-quote .iw-listitem__amount {
   grid-column: 2;
   grid-row: 1 / span 2;
@@ -190,7 +232,39 @@
 }
 .iw-quote .iw-listitem--total { background: #f7f8fa; }
 .iw-quote .iw-listitem--final { background: var(--final-fill); }
-.iw-quote .iw-cardnote { font-size: 13px; line-height: 1.75; word-break: keep-all; }
+
+.iw-quote .iw-price {
+  width: 94px;
+  padding: 6px 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: right;
+  color: #1a1d21;
+  background: #f7f8fa;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  appearance: none;
+}
+.iw-quote .iw-price[disabled] { color: var(--muted); background: #eceef1; }
+.iw-quote .iw-reset {
+  margin: 0 0 12px;
+  padding: 9px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  background: #f2f4f7;
+  border: 1px solid var(--edge);
+  border-radius: 9px;
+  cursor: pointer;
+}
+.iw-quote .iw-cardnote {
+  font-size: 13px;
+  line-height: 1.75;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
 .iw-quote .iw-cardnote span { display: block; }
 .iw-quote .iw-swipe { margin: 0 0 8px; font-size: 12px; color: var(--muted); }
 
@@ -238,6 +312,7 @@
   vertical-align: middle;
   border: 1px solid var(--thin);
   word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 .iw-quote .iw-th { background: var(--head-fill); letter-spacing: 1px; }
 .iw-quote .iw-td { background: #ffffff; }
@@ -356,11 +431,25 @@
 .iw-quote.is-mobile .iw-guide--mo { display: block; }
 .iw-quote.is-mobile .iw-link { font-size: 13px; }
 
-.iw-quote.is-mobile .iw-viewtabs { display: flex; gap: 8px; margin-bottom: 14px; }
-.iw-quote.is-mobile .iw-cards { display: block; }
-.iw-quote.is-mobile[data-view="summary"] .iw-sheetwrap { display: none; }
-.iw-quote.is-mobile[data-view="sheet"] .iw-cards { display: none; }
-.iw-quote.is-mobile[data-view="sheet"] .iw-swipe { display: block; }
+/* 휴대폰에서 단가 칸은 16px 이상이어야 사파리가 화면을 확대하지 않는다 */
+.iw-quote.is-mobile .iw-price { width: 104px; min-height: 42px; font-size: 16px; }
+.iw-quote.is-mobile .iw-reset { width: 100%; min-height: 44px; }
+.iw-quote.is-mobile .iw-listitem { padding: 11px 12px; }
+
+/* 아이폰 SE·미니처럼 아주 좁은 화면 */
+.iw-quote.is-narrow .iw-card { padding: 12px; }
+.iw-quote.is-narrow .iw-card__won { font-size: 19px; }
+.iw-quote.is-narrow .iw-card__hangul,
+.iw-quote.is-narrow .iw-card__help,
+.iw-quote.is-narrow .iw-kv,
+.iw-quote.is-narrow .iw-cardnote { font-size: 12px; }
+.iw-quote.is-narrow .iw-kv span { flex: 0 0 56px; }
+.iw-quote.is-narrow .iw-listitem { padding: 10px; }
+.iw-quote.is-narrow .iw-listitem__name,
+.iw-quote.is-narrow .iw-listitem__amount { font-size: 13px; }
+.iw-quote.is-narrow .iw-listitem__calc { font-size: 11px; }
+.iw-quote.is-narrow .iw-price { width: 92px; padding: 6px; }
+.iw-quote.is-narrow .iw-tab { font-size: 13px; padding: 10px 6px; }
 
 /* JS가 멈춘 경우를 대비한 최소 안전장치 — 가로로 밀어서 볼 수 있게 한다 */
 
@@ -376,13 +465,11 @@
   .iw-quote .iw-form,
   .iw-quote .iw-swipe,
   .iw-quote .iw-viewtabs,
-  .iw-quote.is-mobile .iw-viewtabs,
   .iw-quote.is-mobile[data-view="sheet"] .iw-swipe { display: none; }
   .iw-quote .iw-cards,
-  .iw-quote.is-mobile .iw-cards,
-  .iw-quote.is-mobile[data-view="sheet"] .iw-cards { display: none; }
+  .iw-quote[data-view="summary"] .iw-cards { display: none; }
   .iw-quote .iw-sheetwrap,
-  .iw-quote.is-mobile[data-view="summary"] .iw-sheetwrap { display: block; overflow: visible; }
+  .iw-quote[data-view="summary"] .iw-sheetwrap { display: block; overflow: visible; }
   .iw-quote .iw-sheet {
     width: 190mm;
     max-width: none;
