@@ -19,6 +19,9 @@ from preview import ANNOTATION, TOKEN, defaults
 BASE_DIR = Path(__file__).resolve().parent
 SEAL = BASE_DIR.parent / "notion-worklog" / "assets" / "seal.png"
 OUT = BASE_DIR / "한번에붙여넣기.html"
+# .html은 브라우저가 실행해 버려 코드가 보이지 않는다. 복사해 붙여넣을 때는
+# 텍스트 편집기로 바로 열리는 .txt 쪽을 쓴다(내용은 완전히 같다).
+OUT_TEXT = BASE_DIR / "아임웹-코드-복사용.txt"
 
 HEAD = """<!--
   ┌──────────────────────────────────────────────────────────────┐
@@ -53,18 +56,20 @@ def build() -> Path:
 
     # 아임웹 HTML 블록은 위젯 편집기와 달리 스크립트를 따로 감싸 주지 않는다.
     # 중괄호로 묶어 const 이름이 사이트의 다른 스크립트와 부딪히지 않게 한다.
-    OUT.write_text(
+    code = (
         f"{HEAD}\n<style>\n{css.strip()}\n</style>\n\n{body}\n\n"
-        f"<script>\n{{\n{js.strip()}\n}}\n</script>\n",
-        encoding="utf-8",
+        f"<script>\n{{\n{js.strip()}\n}}\n</script>\n"
     )
+    OUT.write_text(code, encoding="utf-8")
+    OUT_TEXT.write_text(code, encoding="utf-8")
     return OUT
 
 
 def main() -> int:
     path = build()
     print(f"만들었습니다: {path}")
-    print(f"{len(path.read_text(encoding='utf-8')):,}자 — 이 파일 내용을 통째로 붙여넣으면 됩니다.")
+    print(f"복사용 텍스트: {OUT_TEXT}")
+    print(f"{len(path.read_text(encoding='utf-8')):,}자 — 이 내용을 통째로 붙여넣으면 됩니다.")
     return 0
 
 

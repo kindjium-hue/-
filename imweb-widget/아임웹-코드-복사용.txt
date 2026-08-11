@@ -1,0 +1,1040 @@
+<!--
+  ┌──────────────────────────────────────────────────────────────┐
+  │  청명 견적서 위젯 — 한 파일 버전                             │
+  └──────────────────────────────────────────────────────────────┘
+  아임웹 관리자 → 페이지 편집 → 위젯 추가 → 「HTML」(코드 삽입) 블록에
+  이 파일 내용을 처음부터 끝까지 통째로 붙여넣으세요. PC·모바일 겸용입니다.
+
+  고칠 곳은 바로 아래 <section ...> 한 줄뿐입니다.
+    · data-pin="8282"          접속 번호 (비우면 번호 없이 열립니다)
+    · data-form-url=""         웹 폼 주소를 넣으면 "웹 폼 열기" 링크가 보입니다
+    · data-roof-*  data-wall-* 평당 단가와 1식 금액 (원, 숫자만)
+
+  이 파일은 widget.html · widget.css · widget.js 를 합쳐 만든 것입니다.
+  세 파일을 고친 뒤 `python3 onefile.py` 를 다시 실행하면 새로 만들어집니다.
+-->
+
+<style>
+.iw-quote {
+  --sheet-w: 190mm;
+  --line: #000000;
+  --thin: #808080;
+  --head-fill: #dde9f7;
+  --final-fill: #ffffcc;
+  --accent: #2f6df6;
+  --muted: #6b7280;
+  --edge: #e3e6ea;
+  --serif: "HY견명조", "Apple Myungjo", "AppleMyungjo", "NanumMyeongjo",
+           "Batang", "바탕", "Times New Roman", serif;
+  background: transparent;
+  color: #1a1d21;
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+               "Malgun Gothic", sans-serif;
+}
+
+.iw-quote[data-state="open"] .iw-gate { display: none; }
+
+/* ------------------------------------------------------------------ 게이트 */
+
+.iw-quote .iw-gate {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 28px 20px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  text-align: center;
+}
+.iw-quote .iw-gate__title { margin: 0 0 6px; font-size: 20px; font-weight: 700; }
+.iw-quote .iw-gate__desc { margin: 0 0 16px; font-size: 14px; color: var(--muted); }
+.iw-quote .iw-gate__row { display: flex; gap: 8px; }
+.iw-quote .iw-gate__error { margin: 10px 0 0; font-size: 14px; color: #d33b3b; }
+
+/* -------------------------------------------------------------------- 입력 */
+
+.iw-quote .iw-form {
+  max-width: var(--sheet-w);
+  margin: 0 auto 24px;
+  padding: 18px 16px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+}
+.iw-quote .iw-field { margin-bottom: 14px; }
+.iw-quote .iw-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.iw-quote .iw-row .iw-field { flex: 1 1 180px; min-width: 0; }
+.iw-quote .iw-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.iw-quote .iw-input,
+.iw-quote .iw-btn,
+.iw-quote .iw-tab { box-sizing: border-box; }
+.iw-quote .iw-input {
+  width: 100%;
+  padding: 11px 12px;
+  font-family: inherit;
+  font-size: 16px;
+  color: #1a1d21;
+  background: #f7f8fa;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  appearance: none;
+}
+.iw-quote .iw-btn {
+  flex: 0 0 auto;
+  padding: 11px 18px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--accent);
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.iw-quote .iw-hint { display: block; margin-top: 5px; font-size: 13px; color: var(--muted); }
+.iw-quote .iw-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+.iw-quote .iw-check input { width: 19px; height: 19px; flex: none; accent-color: var(--accent); }
+.iw-quote .iw-guide { margin: 12px 0 0; font-size: 13px; line-height: 1.6; color: var(--muted); }
+.iw-quote .iw-guide--mo { display: none; }
+.iw-quote .iw-warn {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #a33;
+  background: rgba(211, 59, 59, 0.08);
+  border-radius: 10px;
+}
+.iw-quote .iw-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* ------------------------------------------ 보기 전환 · 요약 카드 (모바일용) */
+
+.iw-quote .iw-viewtabs { display: none; }
+.iw-quote .iw-cards { display: none; }
+.iw-quote .iw-swipe { display: none; }
+
+.iw-quote .iw-tab {
+  flex: 1 1 0;
+  padding: 11px 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  background: #f2f4f7;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.iw-quote .iw-tab[aria-pressed="true"] {
+  color: #ffffff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.iw-quote .iw-card {
+  margin-bottom: 12px;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+}
+.iw-quote .iw-card__label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+.iw-quote .iw-card--sum { background: var(--final-fill); border-color: #e8e0a0; }
+.iw-quote .iw-card__won { display: block; font-size: 22px; font-weight: 700; }
+.iw-quote .iw-card__hangul {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: #4b5057;
+  word-break: keep-all;
+}
+.iw-quote .iw-kv {
+  display: flex;
+  gap: 10px;
+  padding: 5px 0;
+  font-size: 13px;
+  border-top: 1px solid #f1f2f4;
+}
+.iw-quote .iw-kv span { flex: 0 0 66px; color: var(--muted); }
+.iw-quote .iw-kv b { flex: 1 1 auto; font-weight: 600; word-break: break-all; }
+
+.iw-quote .iw-list {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.iw-quote .iw-listitem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  padding: 10px 13px;
+  border-top: 1px solid #f1f2f4;
+}
+.iw-quote .iw-listitem__name { font-size: 14px; font-weight: 600; word-break: keep-all; }
+.iw-quote .iw-listitem__calc { grid-row: 2; font-size: 12px; color: var(--muted); }
+.iw-quote .iw-listitem__amount {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.iw-quote .iw-listitem--total { background: #f7f8fa; }
+.iw-quote .iw-listitem--final { background: var(--final-fill); }
+.iw-quote .iw-cardnote { font-size: 13px; line-height: 1.75; word-break: keep-all; }
+.iw-quote .iw-cardnote span { display: block; }
+.iw-quote .iw-swipe { margin: 0 0 8px; font-size: 12px; color: var(--muted); }
+
+/* ------------------------------------------------------------- 견적서 본체 */
+
+.iw-quote .iw-sheetwrap { overflow-x: auto; }
+.iw-quote .iw-sheet {
+  width: var(--sheet-w);
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 4mm 0 6mm;
+  background: #ffffff;
+  font-family: var(--serif);
+  color: #000000;
+}
+.iw-quote .iw-sheet__title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 6px;
+  text-align: center;
+}
+.iw-quote .iw-sheet__rule {
+  width: 44%;
+  height: 2px;
+  margin: 4px auto 10px;
+  background: #a5a5a5;
+}
+.iw-quote .iw-sheet table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.iw-quote .iw-top { border: 2px solid var(--line); }
+.iw-quote .iw-main { border: 2px solid var(--line); border-top: 0; }
+.iw-quote .iw-note { margin-top: 6px; border: 2px solid var(--line); }
+.iw-quote .iw-foot { margin-top: 5px; border: 2px solid var(--line); }
+
+.iw-quote .iw-th,
+.iw-quote .iw-td {
+  padding: 3px 5px;
+  font-size: 11px;
+  font-weight: 400;
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid var(--thin);
+  word-break: keep-all;
+}
+.iw-quote .iw-th { background: var(--head-fill); letter-spacing: 1px; }
+.iw-quote .iw-td { background: #ffffff; }
+.iw-quote .iw-td--num { text-align: right; font-size: 10px; padding-right: 8px; }
+.iw-quote .iw-td--addr { font-size: 10px; }
+
+.iw-quote .iw-top .iw-greet {
+  width: 39.5%;
+  padding: 10px 6px;
+  text-align: center;
+  border: 1px solid var(--line);
+  background: #ffffff;
+}
+.iw-quote .iw-greet__line {
+  display: block;
+  padding: 6px 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+.iw-quote .iw-vlabel {
+  width: 5.2%;
+  padding: 6px 0;
+  text-align: center;
+  background: var(--head-fill);
+  border: 1px solid var(--line);
+}
+.iw-quote .iw-vlabel span { display: block; padding: 5px 0; font-size: 12px; font-weight: 700; }
+.iw-quote .iw-td--seal { position: relative; padding-right: 34px; }
+.iw-quote .iw-seal {
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  width: 34px;
+  height: auto;
+  margin-top: -17px;
+}
+
+.iw-quote .iw-col1 { width: 22.2%; }
+.iw-quote .iw-col2 { width: 22.5%; }
+.iw-quote .iw-col3 { width: 11.5%; }
+.iw-quote .iw-col4 { width: 17%; }
+.iw-quote .iw-col5 { width: 16%; }
+.iw-quote .iw-col6 { width: 10.8%; }
+
+.iw-quote .iw-sum .iw-th--sum { padding: 7px 4px; font-size: 12px; font-weight: 700; }
+.iw-quote .iw-sum .iw-th--sum small { font-size: 11px; }
+.iw-quote .iw-td--sum { background: var(--head-fill); font-size: 13px; font-weight: 700; }
+.iw-quote .iw-head .iw-th { padding: 5px 4px; font-size: 11px; font-weight: 700; }
+.iw-quote .iw-item { height: 30px; }
+.iw-quote .iw-item .iw-name { font-size: 12px; font-weight: 700; }
+.iw-quote .iw-project {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 2;
+  text-align: center;
+  border: 1px solid var(--thin);
+  background: #ffffff;
+}
+.iw-quote .iw-project span { display: block; }
+.iw-quote .iw-blank td { height: 46px; }
+.iw-quote .iw-th--plain { background: #ffffff; font-weight: 700; font-size: 11px; }
+.iw-quote .iw-final .iw-th--plain,
+.iw-quote .iw-final .iw-td { background: var(--final-fill); }
+
+.iw-quote .iw-th--note { padding: 5px; font-size: 12px; font-weight: 700; letter-spacing: 4px; }
+.iw-quote .iw-note__body {
+  padding: 7px 10px;
+  font-size: 11px;
+  line-height: 1.85;
+  text-align: left;
+  border: 1px solid var(--thin);
+  background: #ffffff;
+}
+.iw-quote .iw-note__body span { display: block; }
+
+/* --------------------------------- 좁은 화면에서 양식을 통째로 줄여 맞추기 */
+/* 위젯이 놓인 칸의 너비를 재서 JS가 아래 클래스 하나를 골라 붙인다.       */
+
+.iw-fit95 .iw-sheet { zoom: 0.95; }
+.iw-fit90 .iw-sheet { zoom: 0.90; }
+.iw-fit85 .iw-sheet { zoom: 0.85; }
+.iw-fit80 .iw-sheet { zoom: 0.80; }
+.iw-fit75 .iw-sheet { zoom: 0.75; }
+.iw-fit70 .iw-sheet { zoom: 0.70; }
+.iw-fit65 .iw-sheet { zoom: 0.65; }
+.iw-fit60 .iw-sheet { zoom: 0.60; }
+.iw-fit55 .iw-sheet { zoom: 0.55; }
+.iw-fit50 .iw-sheet { zoom: 0.50; }
+.iw-fit45 .iw-sheet { zoom: 0.45; }
+.iw-fit40 .iw-sheet { zoom: 0.40; }
+
+/* ------------------------------------------------------------------ 모바일 */
+/* 화면 크기가 아니라 위젯이 놓인 칸의 너비로 판단한다(아임웹 모바일 편집   */
+/* 화면은 칸만 좁아지고 화면 자체는 넓기 때문에 미디어쿼리로는 안 잡힌다). */
+
+.iw-quote.is-mobile .iw-gate { padding: 22px 16px; border-radius: 12px; }
+.iw-quote.is-mobile .iw-gate__title { font-size: 18px; }
+.iw-quote.is-mobile .iw-gate__desc { font-size: 13px; }
+.iw-quote.is-mobile .iw-gate__row { display: block; }
+.iw-quote.is-mobile .iw-gate__row .iw-input { margin-bottom: 8px; }
+.iw-quote.is-mobile .iw-btn { width: 100%; min-height: 48px; }
+
+.iw-quote.is-mobile .iw-form {
+  margin-bottom: 16px;
+  padding: 14px 12px;
+  border-radius: 12px;
+}
+.iw-quote.is-mobile .iw-row { display: block; }
+.iw-quote.is-mobile .iw-row .iw-field { margin-bottom: 14px; }
+.iw-quote.is-mobile .iw-label { font-size: 13px; }
+.iw-quote.is-mobile .iw-input { min-height: 48px; border-radius: 12px; }
+.iw-quote.is-mobile .iw-check { padding: 4px 0; font-size: 13px; }
+.iw-quote.is-mobile .iw-check input { width: 22px; height: 22px; }
+.iw-quote.is-mobile .iw-guide { font-size: 12px; }
+.iw-quote.is-mobile .iw-guide--pc { display: none; }
+.iw-quote.is-mobile .iw-guide--mo { display: block; }
+.iw-quote.is-mobile .iw-link { font-size: 13px; }
+
+.iw-quote.is-mobile .iw-viewtabs { display: flex; gap: 8px; margin-bottom: 14px; }
+.iw-quote.is-mobile .iw-cards { display: block; }
+.iw-quote.is-mobile[data-view="summary"] .iw-sheetwrap { display: none; }
+.iw-quote.is-mobile[data-view="sheet"] .iw-cards { display: none; }
+.iw-quote.is-mobile[data-view="sheet"] .iw-swipe { display: block; }
+
+/* JS가 멈춘 경우를 대비한 최소 안전장치 — 가로로 밀어서 볼 수 있게 한다 */
+
+@media (max-width: 767px) {
+  .iw-quote .iw-sheetwrap { -webkit-overflow-scrolling: touch; }
+}
+
+/* -------------------------------------------------------------------- 인쇄 */
+/* 어느 보기 모드였든 인쇄·PDF는 언제나 A4 양식 그대로 나간다.            */
+
+@media print {
+  .iw-quote .iw-gate,
+  .iw-quote .iw-form,
+  .iw-quote .iw-swipe,
+  .iw-quote .iw-viewtabs,
+  .iw-quote.is-mobile .iw-viewtabs,
+  .iw-quote.is-mobile[data-view="sheet"] .iw-swipe { display: none; }
+  .iw-quote .iw-cards,
+  .iw-quote.is-mobile .iw-cards,
+  .iw-quote.is-mobile[data-view="sheet"] .iw-cards { display: none; }
+  .iw-quote .iw-sheetwrap,
+  .iw-quote.is-mobile[data-view="summary"] .iw-sheetwrap { display: block; overflow: visible; }
+  .iw-quote .iw-sheet {
+    width: 190mm;
+    max-width: none;
+    padding: 0;
+    zoom: 1;
+  }
+  .iw-quote .iw-th,
+  .iw-quote .iw-td { font-size: 10.5pt; }
+  .iw-quote .iw-item { height: 9mm; }
+  .iw-quote .iw-blank td { height: 14mm; }
+}
+</style>
+
+<section class="iw-quote" data-state="locked" data-view="summary" data-quote-root
+  data-pin="8282"
+  data-form-url=""
+  data-roof-base="20000"
+  data-roof-wash="15000"
+  data-roof-crack="10000"
+  data-roof-coat1="15000"
+  data-roof-coat2="30000"
+  data-roof-coat3="20000"
+  data-roof-waste="200000"
+  data-roof-clean="200000"
+  data-wall-crack="25000"
+  data-wall-coat="30000"
+  data-wall-sky="700000"
+  data-wall-clean="200000"
+  data-wall-etc="200000">
+
+  <div class="iw-gate" data-gate>
+    <h2 class="iw-gate__title">견적서 만들기</h2>
+    <p class="iw-gate__desc">직원용입니다. 접속 번호를 넣어 주세요.</p>
+    <div class="iw-gate__row">
+      <input class="iw-input" type="password" inputmode="numeric" autocomplete="off" aria-label="접속 번호" data-pin-input>
+      <button class="iw-btn" type="button" data-pin-submit>들어가기</button>
+    </div>
+    <p class="iw-gate__error" data-pin-error hidden>번호가 맞지 않습니다.</p>
+  </div>
+
+  <div class="iw-panel" data-panel hidden>
+    <section class="iw-form" role="form" aria-label="견적 입력">
+      <div class="iw-field">
+        <label class="iw-label" for="iw-work">작업항목</label>
+        <select class="iw-input" id="iw-work" data-work>
+          <option value="roof">옥상방수 (청명옥상방수)</option>
+          <option value="wall">외벽방수 (청명종합설비)</option>
+        </select>
+      </div>
+      <div class="iw-field">
+        <label class="iw-label" for="iw-customer">고객명 · 현장명</label>
+        <input class="iw-input" id="iw-customer" type="text" placeholder="예) 카카오프렌즈 지곡점" data-customer>
+      </div>
+      <div class="iw-row">
+        <div class="iw-field">
+          <label class="iw-label" for="iw-area">평수</label>
+          <input class="iw-input" id="iw-area" type="text" inputmode="decimal" placeholder="51" data-area>
+          <span class="iw-hint" data-area-hint></span>
+        </div>
+        <div class="iw-field">
+          <label class="iw-label" for="iw-final">최종 금액 (원)</label>
+          <input class="iw-input" id="iw-final" type="text" inputmode="numeric" placeholder="비우면 합계 그대로" data-final>
+        </div>
+      </div>
+      <label class="iw-check">
+        <input type="checkbox" data-match>
+        <span>최종 금액에 맞춰 단가 조정 (방수코트 비율 유지)</span>
+      </label>
+      <div class="iw-field">
+        <label class="iw-label" for="iw-date">견적일</label>
+        <input class="iw-input" id="iw-date" type="date" data-date>
+      </div>
+      <p class="iw-warn" data-warn hidden></p>
+      <p class="iw-guide iw-guide--pc">
+        아래 견적서가 바로 채워집니다. PDF로 받으시려면 키보드
+        <b>Command + P</b> (윈도우는 <b>Ctrl + P</b>) 를 누르고 <b>PDF로 저장</b>을 고르세요.
+      </p>
+      <p class="iw-guide iw-guide--mo">
+        아래에 견적서가 바로 채워집니다. 휴대폰에서 PDF로 남기려면
+        아이폰은 <b>공유 → 프린트</b>, 안드로이드 크롬은 <b>오른쪽 위 메뉴 → 공유 → 인쇄</b>에서
+        <b>PDF로 저장</b>을 고르세요.
+      </p>
+      <a class="iw-link" href="/" data-form-link hidden>사진까지 올리고 노션에 등록하려면 → 웹 폼 열기</a>
+    </section>
+
+    <div class="iw-viewtabs" role="group" aria-label="보기 방식">
+      <button class="iw-tab" type="button" aria-pressed="true" data-view-summary>요약 보기</button>
+      <button class="iw-tab" type="button" aria-pressed="false" data-view-sheet>견적서 양식</button>
+    </div>
+
+    <div class="iw-cards" data-cards>
+      <div class="iw-card iw-card--sum">
+        <span class="iw-card__label">합 계 금 액 (부가세별도)</span>
+        <b class="iw-card__won" data-card-won>-</b>
+        <span class="iw-card__hangul" data-card-hangul></span>
+      </div>
+      <ul class="iw-list" data-card-rows></ul>
+      <div class="iw-card">
+        <span class="iw-card__label">공사 · 공급자</span>
+        <div class="iw-kv"><span>고객</span><b data-card-customer></b></div>
+        <div class="iw-kv"><span>견적일</span><b data-card-date></b></div>
+        <div class="iw-kv"><span>공사명</span><b data-card-project></b></div>
+        <div class="iw-kv"><span>상호</span><b data-card-company></b></div>
+        <div class="iw-kv"><span>등록번호</span><b data-card-biz></b></div>
+        <div class="iw-kv"><span>대표자</span><b>윤병동</b></div>
+        <div class="iw-kv"><span>담당</span><b data-card-owner></b></div>
+        <div class="iw-kv"><span>연락처</span><b data-card-phone></b></div>
+        <div class="iw-kv"><span>결제방법</span><b>착수금 50% · 잔금 50%</b></div>
+      </div>
+      <div class="iw-card">
+        <span class="iw-card__label">특 이 사 항</span>
+        <div class="iw-cardnote" data-card-notes></div>
+      </div>
+    </div>
+
+    <p class="iw-swipe">종이 양식 그대로입니다. 글씨가 작으면 <b>요약 보기</b>로 확인하세요.</p>
+
+    <div class="iw-sheetwrap" data-sheet-wrap>
+      <div class="iw-sheet" data-sheet>
+        <h1 class="iw-sheet__title">견 적 서</h1>
+        <div class="iw-sheet__rule"></div>
+
+        <table class="iw-top">
+          <tbody>
+            <tr>
+              <td class="iw-greet" rowspan="5">
+                <span class="iw-greet__line" data-sheet-date></span>
+                <span class="iw-greet__line" data-sheet-customer></span>
+                <span class="iw-greet__line">아래와 같이 견적합니다.</span>
+              </td>
+              <td class="iw-vlabel" rowspan="5"><span>공</span><span>급</span><span>자</span></td>
+              <th class="iw-th" scope="row">등록번호</th>
+              <td class="iw-td" colspan="3" data-sheet-biz></td>
+            </tr>
+            <tr>
+              <th class="iw-th" scope="row">상 호 명</th>
+              <td class="iw-td" data-sheet-company></td>
+              <th class="iw-th" scope="row">대 표 자</th>
+              <td class="iw-td iw-td--seal">
+                <span>윤병동</span>
+                <img class="iw-seal" src="data:image/png;base64,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" alt="대표자 도장">
+              </td>
+            </tr>
+            <tr>
+              <th class="iw-th" scope="row">주 소</th>
+              <td class="iw-td iw-td--addr" colspan="3" data-sheet-addr></td>
+            </tr>
+            <tr>
+              <th class="iw-th" scope="row">업 태</th>
+              <td class="iw-td">건설업</td>
+              <th class="iw-th" scope="row">종 목</th>
+              <td class="iw-td" data-sheet-category></td>
+            </tr>
+            <tr>
+              <th class="iw-th" scope="row">전화번호</th>
+              <td class="iw-td">010-5117-8877</td>
+              <th class="iw-th" scope="row">팩 스</th>
+              <td class="iw-td">0504-068-5074</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="iw-main">
+          <colgroup>
+            <col class="iw-col1"><col class="iw-col2"><col class="iw-col3">
+            <col class="iw-col4"><col class="iw-col5"><col class="iw-col6">
+          </colgroup>
+          <tbody>
+            <tr class="iw-sum">
+              <th class="iw-th iw-th--sum" scope="row">합 계 금 액<br><small>(부가세별도)</small></th>
+              <td class="iw-td iw-td--sum" colspan="5" data-sheet-hangul></td>
+            </tr>
+            <tr class="iw-head">
+              <th class="iw-th" scope="col">공사명</th>
+              <th class="iw-th" scope="col">품목</th>
+              <th class="iw-th" scope="col">수량</th>
+              <th class="iw-th" scope="col">단가</th>
+              <th class="iw-th" scope="col">금액</th>
+              <th class="iw-th" scope="col">비고</th>
+            </tr>
+          </tbody>
+          <tbody data-sheet-rows></tbody>
+          <tbody>
+            <tr class="iw-total">
+              <th class="iw-th iw-th--plain" scope="row">합계</th>
+              <td class="iw-td" colspan="3"></td>
+              <td class="iw-td iw-td--num" data-sheet-subtotal></td>
+              <td class="iw-td"></td>
+            </tr>
+            <tr class="iw-final">
+              <th class="iw-th iw-th--plain" scope="row">최종 네고 금액</th>
+              <td class="iw-td" colspan="3"></td>
+              <td class="iw-td iw-td--num" data-sheet-final></td>
+              <td class="iw-td"></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="iw-note">
+          <tbody>
+            <tr><th class="iw-th iw-th--note" scope="col">특 이 사 항</th></tr>
+            <tr><td class="iw-note__body" data-sheet-notes></td></tr>
+          </tbody>
+        </table>
+
+        <table class="iw-foot">
+          <tbody>
+            <tr>
+              <th class="iw-th" scope="row">담당</th>
+              <td class="iw-td" data-sheet-owner></td>
+              <th class="iw-th" scope="row">연 락 처</th>
+              <td class="iw-td" data-sheet-phone></td>
+              <th class="iw-th" scope="row">결제방법</th>
+              <td class="iw-td">착수금50%,잔금50%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+{
+/* 견적서 생성기 — 평수를 넣으면 회사 양식대로 견적서를 채운다.
+   금액 계산은 파이썬 생성기(quote.py)와 같은 규칙을 쓴다.
+   화면 폭이 아니라 위젯이 놓인 칸의 너비를 재서 모바일 배치로 바꾼다. */
+
+const PYEONG_TO_M2 = 3.3058;
+const AMOUNT_STEP = 1000; // 조정한 금액은 1,000원 단위
+const PRICE_UNIT = 10; // 조정한 단가는 10원 단위
+const DIGITS = "영일이삼사오육칠팔구";
+const SMALL_UNITS = ["", "십", "백", "천"];
+const BIG_UNITS = ["", "만", "억", "조"];
+
+const MOBILE_MAX = 620; // 이보다 좁으면 모바일 배치
+const SHEET_PX = 718; // 견적서 폭 190mm를 픽셀로 환산한 값
+const FIT_STEPS = [95, 90, 85, 80, 75, 70, 65, 60, 55, 50, 45, 40];
+
+const BRANDS = {
+  roof: {
+    name: "청명옥상방수",
+    biz: "254-11-02805",
+    addr: "경기 용인시 기흥구 동백죽전대로 205 B202호 D065",
+    category: "방수미장 공사업",
+    owner: "송경훈",
+    phone: "010-4156-4043",
+    project: ["옥상", "바닥 방수"],
+    notes: [
+      "* 공사명: 옥상 방수 공사",
+      "* 공사일자: 협의(1-2일 소요)",
+      "* 작업방법: 바탕면 정리 → 고압세척 → 프라이머 → 크랙보수 → 하도 작업 → 중도 작업 → 상도작업 → 검수",
+      "* 보증기간: 작업구간에 한하여 2년 보증. (다른 부분에 의한 누수는 제외)",
+    ],
+    items: [
+      { name: "바탕면작업", key: "roof-base", perArea: true },
+      { name: "고압세척", key: "roof-wash", perArea: true },
+      { name: "크랙보수", key: "roof-crack", perArea: true },
+      { name: "하도 방수코트", key: "roof-coat1", perArea: true, balance: true },
+      { name: "중도 방수코트", key: "roof-coat2", perArea: true, balance: true },
+      { name: "상도 방수코트", key: "roof-coat3", perArea: true, balance: true },
+      { name: "폐기물처리", key: "roof-waste", perArea: false },
+      { name: "보양•청소", key: "roof-clean", perArea: false },
+    ],
+  },
+  wall: {
+    name: "청명종합설비",
+    biz: "552-08-01511",
+    addr: "권선구 서호동로26번길 19 3층 302-A1호",
+    category: "방수미장 공사업",
+    owner: "송경훈",
+    phone: "010-4156-4043",
+    project: ["외벽방수"],
+    notes: [
+      "* 공사명: 외벽 방수 공사",
+      "* 공사일자: 협의(1-2일 소요)",
+      "* 작업방법: 바탕면 정리 → 프라이머 → 크랙보수 → 표면방수제 → 구조 보강 작업",
+      "* 보증기간: 작업구간에 한하여 2년 보증. (다른 부분에 의한 누수는 제외)",
+    ],
+    items: [
+      { name: "크랙보수", key: "wall-crack", perArea: true, balance: true },
+      { name: "표면 방수제 도포", key: "wall-coat", perArea: true, balance: true },
+      { name: "스카이 차량", key: "wall-sky", perArea: false },
+      { name: "보양•청소", key: "wall-clean", perArea: false },
+      { name: "잡자재비용", key: "wall-etc", perArea: false },
+    ],
+  },
+};
+
+const root = document.querySelector("[data-quote-root]");
+
+const pick = (name) => root.querySelector(`[data-${name}]`);
+const gate = pick("gate");
+const panel = pick("panel");
+const pinInput = pick("pin-input");
+const pinError = pick("pin-error");
+const workSelect = pick("work");
+const customerInput = pick("customer");
+const areaInput = pick("area");
+const finalInput = pick("final");
+const matchInput = pick("match");
+const dateInput = pick("date");
+const areaHint = pick("area-hint");
+const warnBox = pick("warn");
+const formLink = pick("form-link");
+const sheetWrap = pick("sheet-wrap");
+const summaryTab = pick("view-summary");
+const sheetTab = pick("view-sheet");
+
+const toNumber = (text) => {
+  const cleaned = String(text || "").replace(/[^\d.]/g, "");
+  const value = parseFloat(cleaned);
+  return isFinite(value) ? value : 0;
+};
+
+const price = (key) => toNumber(root.getAttribute(`data-${key}`));
+
+const won = (value) => Math.round(value).toLocaleString("ko-KR");
+
+/** 1200000 → '일백이십만' (견적서 표기 방식) */
+const koreanAmount = (value) => {
+  let left = Math.round(value);
+  if (left === 0) return "영";
+  const groups = [];
+  while (left > 0) {
+    groups.push(left % 10000);
+    left = Math.floor(left / 10000);
+  }
+  let text = "";
+  for (let index = groups.length - 1; index >= 0; index -= 1) {
+    const group = groups[index];
+    if (group === 0) continue;
+    let chunk = "";
+    for (let pos = 3; pos >= 0; pos -= 1) {
+      const digit = Math.floor(group / Math.pow(10, pos)) % 10;
+      if (digit > 0) chunk += DIGITS[digit] + SMALL_UNITS[pos];
+    }
+    text += chunk + BIG_UNITS[index];
+  }
+  return text;
+};
+
+/** 평수와 단가로 견적 줄을 만든다 */
+const buildRows = (brand, area) => {
+  const rows = [];
+  for (let i = 0; i < brand.items.length; i += 1) {
+    const spec = brand.items[i];
+    const quantity = spec.perArea ? area : 1;
+    const unit = price(spec.key);
+    if (quantity <= 0 || unit <= 0) continue;
+    rows.push({
+      name: spec.name,
+      balance: spec.balance === true,
+      quantity: quantity,
+      unit: unit,
+      amount: Math.round(quantity * unit),
+    });
+  }
+  return rows;
+};
+
+/** 최종 금액에 맞춰 조정 대상의 단가를 원래 비율대로 다시 나눈다 */
+const matchToTotal = (rows, target) => {
+  const picked = [];
+  let fixed = 0;
+  for (let i = 0; i < rows.length; i += 1) {
+    if (rows[i].balance) picked.push(rows[i]);
+    else fixed += rows[i].amount;
+  }
+  if (picked.length === 0) return "조정할 품목이 없습니다.";
+
+  const room = target - fixed;
+  if (room <= 0) {
+    return `최종 금액이 조정하지 않는 항목 합계(${won(fixed)}원)보다 작습니다.`;
+  }
+
+  let weightSum = 0;
+  let biggest = 0;
+  for (let i = 0; i < picked.length; i += 1) {
+    weightSum += picked[i].unit;
+    if (picked[i].unit > picked[biggest].unit) biggest = i;
+  }
+  if (weightSum <= 0) return "조정할 품목의 단가가 0입니다.";
+
+  let others = 0;
+  for (let i = 0; i < picked.length; i += 1) {
+    if (i === biggest) continue;
+    const share = (room * picked[i].unit) / weightSum;
+    picked[i].amount = Math.round(share / AMOUNT_STEP) * AMOUNT_STEP;
+    others += picked[i].amount;
+  }
+  // 반올림 잔액은 비중이 가장 큰 품목(중도)이 흡수해 합계를 정확히 맞춘다
+  picked[biggest].amount = room - others;
+
+  for (let i = 0; i < picked.length; i += 1) {
+    const perUnit = picked[i].amount / picked[i].quantity;
+    picked[i].unit = Math.round(perUnit / PRICE_UNIT) * PRICE_UNIT;
+  }
+  return "";
+};
+
+const quantityText = (value) =>
+  Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100);
+
+const cell = (text, className) => {
+  const td = document.createElement("td");
+  td.className = className;
+  td.textContent = text;
+  return td;
+};
+
+const renderRows = (rows, projectLines) => {
+  const body = pick("sheet-rows");
+  body.innerHTML = "";
+  if (rows.length === 0) return;
+
+  for (let i = 0; i < rows.length; i += 1) {
+    const row = rows[i];
+    const tr = document.createElement("tr");
+    tr.className = "iw-item";
+    if (i === 0) {
+      const project = document.createElement("td");
+      project.className = "iw-project";
+      project.setAttribute("rowspan", String(rows.length));
+      for (let line = 0; line < projectLines.length; line += 1) {
+        const span = document.createElement("span");
+        span.textContent = projectLines[line];
+        project.appendChild(span);
+      }
+      tr.appendChild(project);
+    }
+    tr.appendChild(cell(row.name, "iw-td iw-name"));
+    tr.appendChild(cell(quantityText(row.quantity), "iw-td"));
+    tr.appendChild(cell(won(row.unit), "iw-td iw-td--num"));
+    tr.appendChild(cell(won(row.amount), "iw-td iw-td--num"));
+    tr.appendChild(cell("", "iw-td"));
+    body.appendChild(tr);
+  }
+
+  const blank = document.createElement("tr");
+  blank.className = "iw-blank";
+  for (let i = 0; i < 5; i += 1) blank.appendChild(cell("", "iw-td"));
+  body.appendChild(blank);
+};
+
+const renderNotes = (lines) => {
+  const boxes = [pick("sheet-notes"), pick("card-notes")];
+  for (let box = 0; box < boxes.length; box += 1) {
+    boxes[box].innerHTML = "";
+    for (let i = 0; i < lines.length; i += 1) {
+      const span = document.createElement("span");
+      span.textContent = lines[i];
+      boxes[box].appendChild(span);
+    }
+  }
+};
+
+/** 요약 카드 한 줄 (품목 이름 · 수량×단가 · 금액) */
+const listItem = (name, calc, amount, extra) => {
+  const li = document.createElement("li");
+  li.className = extra ? `iw-listitem ${extra}` : "iw-listitem";
+  const title = document.createElement("span");
+  title.className = "iw-listitem__name";
+  title.textContent = name;
+  const detail = document.createElement("span");
+  detail.className = "iw-listitem__calc";
+  detail.textContent = calc;
+  const money = document.createElement("b");
+  money.className = "iw-listitem__amount";
+  money.textContent = `${won(amount)}원`;
+  li.appendChild(title);
+  li.appendChild(detail);
+  li.appendChild(money);
+  return li;
+};
+
+/** 휴대폰에서 표 대신 읽는 요약 화면 */
+const renderCards = (rows, brand, subtotal, billed, area) => {
+  const list = pick("card-rows");
+  list.innerHTML = "";
+  for (let i = 0; i < rows.length; i += 1) {
+    const row = rows[i];
+    const calc = `${quantityText(row.quantity)} × ${won(row.unit)}원`;
+    list.appendChild(listItem(row.name, calc, row.amount, ""));
+  }
+  if (rows.length > 0) {
+    list.appendChild(listItem("합계", "부가세 별도", subtotal, "iw-listitem--total"));
+    if (billed !== subtotal) {
+      list.appendChild(listItem("최종 네고 금액", "부가세 별도", billed, "iw-listitem--final"));
+    }
+  }
+
+  pick("card-won").textContent = area > 0 ? `${won(billed)}원` : "-";
+  pick("card-hangul").textContent = area > 0 ? `일금 ${koreanAmount(billed)}원정` : "";
+  pick("card-customer").textContent = customerInput.value.trim();
+  pick("card-date").textContent = dateText(dateInput.value);
+  pick("card-project").textContent = brand.project.join(" ");
+  pick("card-company").textContent = brand.name;
+  pick("card-biz").textContent = brand.biz;
+  pick("card-owner").textContent = brand.owner;
+  pick("card-phone").textContent = brand.phone;
+};
+
+const dateText = (value) => {
+  const parts = String(value || "").split("-");
+  if (parts.length !== 3) return "";
+  return `${parts[0]} 년 ${Number(parts[1])} 월 ${Number(parts[2])}일`;
+};
+
+const render = () => {
+  const brand = BRANDS[workSelect.value] || BRANDS.roof;
+  const area = toNumber(areaInput.value);
+  const asked = toNumber(finalInput.value);
+
+  areaHint.textContent = area > 0 ? `≈ ${(area * PYEONG_TO_M2).toFixed(1)}㎡` : "";
+
+  const rows = buildRows(brand, area);
+  let warning = "";
+  if (matchInput.checked && asked > 0 && area > 0) {
+    warning = matchToTotal(rows, asked);
+  }
+  warnBox.textContent = warning;
+  warnBox.hidden = warning === "";
+
+  let subtotal = 0;
+  for (let i = 0; i < rows.length; i += 1) subtotal += rows[i].amount;
+  const billed = asked > 0 ? asked : subtotal;
+
+  pick("sheet-date").textContent = dateText(dateInput.value);
+  const customer = customerInput.value.trim();
+  pick("sheet-customer").textContent = customer ? `${customer} 귀중` : "";
+  pick("sheet-biz").textContent = brand.biz;
+  pick("sheet-company").textContent = brand.name;
+  pick("sheet-addr").textContent = brand.addr;
+  pick("sheet-category").textContent = brand.category;
+  pick("sheet-owner").textContent = brand.owner;
+  pick("sheet-phone").textContent = brand.phone;
+  pick("sheet-hangul").textContent =
+    area > 0 ? `일금 ${koreanAmount(billed)}원정 ₩${won(billed)}` : "";
+  pick("sheet-subtotal").textContent = area > 0 ? won(subtotal) : "";
+  pick("sheet-final").textContent = area > 0 ? won(billed) : "";
+
+  renderRows(rows, brand.project);
+  renderNotes(brand.notes);
+  renderCards(rows, brand, subtotal, billed, area);
+};
+
+/** 양식이 칸 안에 들어오도록 축소 비율 클래스를 하나 골라 붙인다 */
+const setFit = (width) => {
+  for (let i = 0; i < FIT_STEPS.length; i += 1) {
+    sheetWrap.classList.remove(`iw-fit${FIT_STEPS[i]}`);
+  }
+  if (width <= 0 || width >= SHEET_PX) return;
+  const percent = Math.floor(((width - 2) / SHEET_PX) * 20) * 5;
+  const step = Math.max(40, Math.min(95, percent));
+  sheetWrap.classList.add(`iw-fit${step}`);
+};
+
+/** 위젯이 놓인 칸의 너비로 모바일 여부를 정한다 */
+const applyWidth = () => {
+  const width = root.offsetWidth || window.innerWidth || 0;
+  if (width <= 0) return;
+  if (width < MOBILE_MAX) root.classList.add("is-mobile");
+  else root.classList.remove("is-mobile");
+  setFit(width);
+};
+
+const setView = (mode) => {
+  root.setAttribute("data-view", mode);
+  summaryTab.setAttribute("aria-pressed", mode === "summary" ? "true" : "false");
+  sheetTab.setAttribute("aria-pressed", mode === "sheet" ? "true" : "false");
+  applyWidth();
+};
+
+const openPanel = () => {
+  root.setAttribute("data-state", "open");
+  panel.hidden = false;
+  gate.hidden = true;
+  render();
+  applyWidth();
+};
+
+const checkPin = () => {
+  const wanted = String(root.getAttribute("data-pin") || "").trim();
+  const typed = String(pinInput.value || "").trim();
+  if (wanted === "" || typed === wanted) {
+    pinError.hidden = true;
+    openPanel();
+    return;
+  }
+  pinError.hidden = false;
+};
+
+const today = () => {
+  const now = new Date();
+  const month = `0${now.getMonth() + 1}`.slice(-2);
+  const day = `0${now.getDate()}`.slice(-2);
+  return `${now.getFullYear()}-${month}-${day}`;
+};
+
+const setup = () => {
+  if (!root) return;
+
+  dateInput.value = today();
+
+  const formUrl = String(root.getAttribute("data-form-url") || "").trim();
+  if (formUrl.indexOf("http") === 0) {
+    formLink.setAttribute("href", formUrl);
+    formLink.hidden = false;
+  }
+
+  pick("pin-submit").addEventListener("click", checkPin);
+  pinInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") checkPin();
+  });
+
+  summaryTab.addEventListener("click", () => setView("summary"));
+  sheetTab.addEventListener("click", () => setView("sheet"));
+
+  const watched = [workSelect, customerInput, areaInput, finalInput, matchInput, dateInput];
+  for (let i = 0; i < watched.length; i += 1) {
+    watched[i].addEventListener("input", render);
+    watched[i].addEventListener("change", render);
+  }
+
+  applyWidth();
+  if (typeof ResizeObserver === "function") {
+    const watcher = new ResizeObserver(() => applyWidth());
+    watcher.observe(root);
+  }
+  window.addEventListener("resize", applyWidth);
+
+  if (String(root.getAttribute("data-pin") || "").trim() === "") openPanel();
+};
+
+setup();
+}
+</script>
