@@ -1,0 +1,246 @@
+.iw-quote {
+  --sheet-w: 190mm;
+  --line: #000000;
+  --thin: #808080;
+  --head-fill: #dde9f7;
+  --final-fill: #ffffcc;
+  --accent: #2f6df6;
+  --muted: #6b7280;
+  --serif: "HY견명조", "Apple Myungjo", "AppleMyungjo", "NanumMyeongjo",
+           "Batang", "바탕", "Times New Roman", serif;
+  background: transparent;
+  color: #1a1d21;
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+               "Malgun Gothic", sans-serif;
+}
+
+.iw-quote[data-state="open"] .iw-gate { display: none; }
+
+/* ------------------------------------------------------------------ 게이트 */
+
+.iw-quote .iw-gate {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 28px 20px;
+  border: 1px solid #e3e6ea;
+  border-radius: 14px;
+  text-align: center;
+}
+.iw-quote .iw-gate__title { margin: 0 0 6px; font-size: 20px; font-weight: 700; }
+.iw-quote .iw-gate__desc { margin: 0 0 16px; font-size: 14px; color: var(--muted); }
+.iw-quote .iw-gate__row { display: flex; gap: 8px; }
+.iw-quote .iw-gate__error { margin: 10px 0 0; font-size: 14px; color: #d33b3b; }
+
+/* -------------------------------------------------------------------- 입력 */
+
+.iw-quote .iw-form {
+  max-width: var(--sheet-w);
+  margin: 0 auto 24px;
+  padding: 18px 16px;
+  border: 1px solid #e3e6ea;
+  border-radius: 14px;
+}
+.iw-quote .iw-field { margin-bottom: 14px; }
+.iw-quote .iw-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.iw-quote .iw-row .iw-field { flex: 1 1 180px; min-width: 0; }
+.iw-quote .iw-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.iw-quote .iw-input {
+  width: 100%;
+  padding: 11px 12px;
+  font-family: inherit;
+  font-size: 16px;
+  color: #1a1d21;
+  background: #f7f8fa;
+  border: 1px solid #e3e6ea;
+  border-radius: 10px;
+  appearance: none;
+}
+.iw-quote .iw-btn {
+  flex: 0 0 auto;
+  padding: 11px 18px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--accent);
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.iw-quote .iw-hint { display: block; margin-top: 5px; font-size: 13px; color: var(--muted); }
+.iw-quote .iw-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+.iw-quote .iw-check input { width: 19px; height: 19px; flex: none; accent-color: var(--accent); }
+.iw-quote .iw-guide { margin: 12px 0 0; font-size: 13px; line-height: 1.6; color: var(--muted); }
+.iw-quote .iw-warn {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #a33;
+  background: rgba(211, 59, 59, 0.08);
+  border-radius: 10px;
+}
+.iw-quote .iw-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* ------------------------------------------------------------- 견적서 본체 */
+
+.iw-quote .iw-sheet {
+  width: var(--sheet-w);
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 4mm 0 6mm;
+  background: #ffffff;
+  font-family: var(--serif);
+  color: #000000;
+}
+.iw-quote .iw-sheet__title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 6px;
+  text-align: center;
+}
+.iw-quote .iw-sheet__rule {
+  width: 44%;
+  height: 2px;
+  margin: 4px auto 10px;
+  background: #a5a5a5;
+}
+.iw-quote .iw-sheet table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.iw-quote .iw-top { border: 2px solid var(--line); }
+.iw-quote .iw-main { border: 2px solid var(--line); border-top: 0; }
+.iw-quote .iw-note { margin-top: 6px; border: 2px solid var(--line); }
+.iw-quote .iw-foot { margin-top: 5px; border: 2px solid var(--line); }
+
+.iw-quote .iw-th,
+.iw-quote .iw-td {
+  padding: 3px 5px;
+  font-size: 11px;
+  font-weight: 400;
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid var(--thin);
+  word-break: keep-all;
+}
+.iw-quote .iw-th { background: var(--head-fill); letter-spacing: 1px; }
+.iw-quote .iw-td { background: #ffffff; }
+.iw-quote .iw-td--num { text-align: right; font-size: 10px; padding-right: 8px; }
+.iw-quote .iw-td--addr { font-size: 10px; }
+
+.iw-quote .iw-top .iw-greet {
+  width: 39.5%;
+  padding: 10px 6px;
+  text-align: center;
+  border: 1px solid var(--line);
+  background: #ffffff;
+}
+.iw-quote .iw-greet__line {
+  display: block;
+  padding: 6px 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+.iw-quote .iw-vlabel {
+  width: 5.2%;
+  padding: 6px 0;
+  text-align: center;
+  background: var(--head-fill);
+  border: 1px solid var(--line);
+}
+.iw-quote .iw-vlabel span { display: block; padding: 5px 0; font-size: 12px; font-weight: 700; }
+.iw-quote .iw-td--seal { position: relative; padding-right: 34px; }
+.iw-quote .iw-seal {
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  width: 34px;
+  height: auto;
+  margin-top: -17px;
+}
+
+.iw-quote .iw-col1 { width: 22.2%; }
+.iw-quote .iw-col2 { width: 22.5%; }
+.iw-quote .iw-col3 { width: 11.5%; }
+.iw-quote .iw-col4 { width: 17%; }
+.iw-quote .iw-col5 { width: 16%; }
+.iw-quote .iw-col6 { width: 10.8%; }
+
+.iw-quote .iw-sum .iw-th--sum { padding: 7px 4px; font-size: 12px; font-weight: 700; }
+.iw-quote .iw-sum .iw-th--sum small { font-size: 11px; }
+.iw-quote .iw-td--sum { background: var(--head-fill); font-size: 13px; font-weight: 700; }
+.iw-quote .iw-head .iw-th { padding: 5px 4px; font-size: 11px; font-weight: 700; }
+.iw-quote .iw-item { height: 30px; }
+.iw-quote .iw-item .iw-name { font-size: 12px; font-weight: 700; }
+.iw-quote .iw-project {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 2;
+  text-align: center;
+  border: 1px solid var(--thin);
+  background: #ffffff;
+}
+.iw-quote .iw-project span { display: block; }
+.iw-quote .iw-blank td { height: 46px; }
+.iw-quote .iw-th--plain { background: #ffffff; font-weight: 700; font-size: 11px; }
+.iw-quote .iw-final .iw-th--plain,
+.iw-quote .iw-final .iw-td { background: var(--final-fill); }
+
+.iw-quote .iw-th--note { padding: 5px; font-size: 12px; font-weight: 700; letter-spacing: 4px; }
+.iw-quote .iw-note__body {
+  padding: 7px 10px;
+  font-size: 11px;
+  line-height: 1.85;
+  text-align: left;
+  border: 1px solid var(--thin);
+  background: #ffffff;
+}
+.iw-quote .iw-note__body span { display: block; }
+
+/* -------------------------------------------------------------------- 반응 */
+
+@media (max-width: 768px) {
+  .iw-quote .iw-sheet {
+    width: 100%;
+    overflow-x: auto;
+  }
+  .iw-quote .iw-sheet__title { font-size: 20px; letter-spacing: 4px; }
+  .iw-quote .iw-th,
+  .iw-quote .iw-td { font-size: 10px; padding: 2px 3px; }
+  .iw-quote .iw-greet__line { font-size: 11px; }
+}
+
+/* -------------------------------------------------------------------- 인쇄 */
+
+@media print {
+  .iw-quote .iw-gate,
+  .iw-quote .iw-form { display: none; }
+  .iw-quote .iw-sheet {
+    width: 190mm;
+    padding: 0;
+  }
+  .iw-quote .iw-th,
+  .iw-quote .iw-td { font-size: 10.5pt; }
+  .iw-quote .iw-item { height: 9mm; }
+  .iw-quote .iw-blank td { height: 14mm; }
+}

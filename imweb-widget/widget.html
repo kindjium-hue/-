@@ -1,0 +1,186 @@
+{{!-- @name text-pin @type textfield @default 8282 @label "접속 번호" @placeholder "직원에게 알려줄 번호" --}}
+{{!-- @name text-form-url @type textfield @default "" @label "웹 폼 주소 (PDF 받는 곳)" @placeholder "https://..." --}}
+{{!-- @name image-seal @type image @label "대표자 도장 (PNG)" --}}
+{{!-- @name text-roof-base @type textfield @default 20000 @label "옥상방수 · 바탕면작업 (평당)" --}}
+{{!-- @name text-roof-wash @type textfield @default 15000 @label "옥상방수 · 고압세척 (평당)" --}}
+{{!-- @name text-roof-crack @type textfield @default 10000 @label "옥상방수 · 크랙보수 (평당)" --}}
+{{!-- @name text-roof-coat1 @type textfield @default 15000 @label "옥상방수 · 하도 방수코트 (평당)" --}}
+{{!-- @name text-roof-coat2 @type textfield @default 30000 @label "옥상방수 · 중도 방수코트 (평당)" --}}
+{{!-- @name text-roof-coat3 @type textfield @default 20000 @label "옥상방수 · 상도 방수코트 (평당)" --}}
+{{!-- @name text-roof-waste @type textfield @default 200000 @label "옥상방수 · 폐기물처리 (1식)" --}}
+{{!-- @name text-roof-clean @type textfield @default 200000 @label "옥상방수 · 보양청소 (1식)" --}}
+{{!-- @name text-wall-crack @type textfield @default 25000 @label "외벽방수 · 크랙보수 (평당)" --}}
+{{!-- @name text-wall-coat @type textfield @default 30000 @label "외벽방수 · 표면 방수제 도포 (평당)" --}}
+{{!-- @name text-wall-sky @type textfield @default 700000 @label "외벽방수 · 스카이 차량 (1식)" --}}
+{{!-- @name text-wall-clean @type textfield @default 200000 @label "외벽방수 · 보양청소 (1식)" --}}
+{{!-- @name text-wall-etc @type textfield @default 200000 @label "외벽방수 · 잡자재비용 (1식)" --}}
+
+<section class="iw-quote" data-state="locked" data-quote-root
+  data-pin="{{text-pin}}"
+  data-form-url="{{text-form-url}}"
+  data-roof-base="{{text-roof-base}}"
+  data-roof-wash="{{text-roof-wash}}"
+  data-roof-crack="{{text-roof-crack}}"
+  data-roof-coat1="{{text-roof-coat1}}"
+  data-roof-coat2="{{text-roof-coat2}}"
+  data-roof-coat3="{{text-roof-coat3}}"
+  data-roof-waste="{{text-roof-waste}}"
+  data-roof-clean="{{text-roof-clean}}"
+  data-wall-crack="{{text-wall-crack}}"
+  data-wall-coat="{{text-wall-coat}}"
+  data-wall-sky="{{text-wall-sky}}"
+  data-wall-clean="{{text-wall-clean}}"
+  data-wall-etc="{{text-wall-etc}}">
+
+  <div class="iw-gate" data-gate>
+    <h2 class="iw-gate__title">견적서 만들기</h2>
+    <p class="iw-gate__desc">직원용입니다. 접속 번호를 넣어 주세요.</p>
+    <div class="iw-gate__row">
+      <input class="iw-input" type="password" inputmode="numeric" aria-label="접속 번호" data-pin-input>
+      <button class="iw-btn" type="button" data-pin-submit>들어가기</button>
+    </div>
+    <p class="iw-gate__error" data-pin-error hidden>번호가 맞지 않습니다.</p>
+  </div>
+
+  <div class="iw-panel" data-panel hidden>
+    <section class="iw-form" role="form" aria-label="견적 입력">
+      <div class="iw-field">
+        <label class="iw-label" for="iw-work">작업항목</label>
+        <select class="iw-input" id="iw-work" data-work>
+          <option value="roof">옥상방수 (청명옥상방수)</option>
+          <option value="wall">외벽방수 (청명종합설비)</option>
+        </select>
+      </div>
+      <div class="iw-field">
+        <label class="iw-label" for="iw-customer">고객명 · 현장명</label>
+        <input class="iw-input" id="iw-customer" type="text" placeholder="예) 카카오프렌즈 지곡점" data-customer>
+      </div>
+      <div class="iw-row">
+        <div class="iw-field">
+          <label class="iw-label" for="iw-area">평수</label>
+          <input class="iw-input" id="iw-area" type="text" inputmode="decimal" placeholder="51" data-area>
+          <span class="iw-hint" data-area-hint></span>
+        </div>
+        <div class="iw-field">
+          <label class="iw-label" for="iw-final">최종 금액 (원)</label>
+          <input class="iw-input" id="iw-final" type="text" inputmode="numeric" placeholder="비우면 합계 그대로" data-final>
+        </div>
+      </div>
+      <label class="iw-check">
+        <input type="checkbox" data-match>
+        <span>최종 금액에 맞춰 단가 조정 (방수코트 비율 유지)</span>
+      </label>
+      <div class="iw-field">
+        <label class="iw-label" for="iw-date">견적일</label>
+        <input class="iw-input" id="iw-date" type="date" data-date>
+      </div>
+      <p class="iw-warn" data-warn hidden></p>
+      <p class="iw-guide">
+        아래 견적서가 바로 채워집니다. PDF로 받으시려면 키보드
+        <b>Command + P</b> (윈도우는 <b>Ctrl + P</b>) 를 누르고 <b>PDF로 저장</b>을 고르세요.
+      </p>
+      <a class="iw-link" href="/" data-form-link hidden>사진까지 올리고 노션에 등록하려면 → 웹 폼 열기</a>
+    </section>
+
+    <div class="iw-sheet" data-sheet>
+      <h1 class="iw-sheet__title">견 적 서</h1>
+      <div class="iw-sheet__rule"></div>
+
+      <table class="iw-top">
+        <tbody>
+          <tr>
+            <td class="iw-greet" rowspan="5">
+              <span class="iw-greet__line" data-sheet-date></span>
+              <span class="iw-greet__line" data-sheet-customer></span>
+              <span class="iw-greet__line">아래와 같이 견적합니다.</span>
+            </td>
+            <td class="iw-vlabel" rowspan="5"><span>공</span><span>급</span><span>자</span></td>
+            <th class="iw-th" scope="row">등록번호</th>
+            <td class="iw-td" colspan="3" data-sheet-biz></td>
+          </tr>
+          <tr>
+            <th class="iw-th" scope="row">상 호 명</th>
+            <td class="iw-td" data-sheet-company></td>
+            <th class="iw-th" scope="row">대 표 자</th>
+            <td class="iw-td iw-td--seal">
+              <span>윤병동</span>
+              <img class="iw-seal" src="{{image-seal}}" alt="대표자 도장">
+            </td>
+          </tr>
+          <tr>
+            <th class="iw-th" scope="row">주 소</th>
+            <td class="iw-td iw-td--addr" colspan="3" data-sheet-addr></td>
+          </tr>
+          <tr>
+            <th class="iw-th" scope="row">업 태</th>
+            <td class="iw-td">건설업</td>
+            <th class="iw-th" scope="row">종 목</th>
+            <td class="iw-td" data-sheet-category></td>
+          </tr>
+          <tr>
+            <th class="iw-th" scope="row">전화번호</th>
+            <td class="iw-td">010-5117-8877</td>
+            <th class="iw-th" scope="row">팩 스</th>
+            <td class="iw-td">0504-068-5074</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="iw-main">
+        <colgroup>
+          <col class="iw-col1"><col class="iw-col2"><col class="iw-col3">
+          <col class="iw-col4"><col class="iw-col5"><col class="iw-col6">
+        </colgroup>
+        <tbody>
+          <tr class="iw-sum">
+            <th class="iw-th iw-th--sum" scope="row">합 계 금 액<br><small>(부가세별도)</small></th>
+            <td class="iw-td iw-td--sum" colspan="5" data-sheet-hangul></td>
+          </tr>
+          <tr class="iw-head">
+            <th class="iw-th" scope="col">공사명</th>
+            <th class="iw-th" scope="col">품목</th>
+            <th class="iw-th" scope="col">수량</th>
+            <th class="iw-th" scope="col">단가</th>
+            <th class="iw-th" scope="col">금액</th>
+            <th class="iw-th" scope="col">비고</th>
+          </tr>
+        </tbody>
+        <tbody data-sheet-rows></tbody>
+        <tbody>
+          <tr class="iw-total">
+            <th class="iw-th iw-th--plain" scope="row">합계</th>
+            <td class="iw-td" colspan="3"></td>
+            <td class="iw-td iw-td--num" data-sheet-subtotal></td>
+            <td class="iw-td"></td>
+          </tr>
+          <tr class="iw-final">
+            <th class="iw-th iw-th--plain" scope="row">최종 네고 금액</th>
+            <td class="iw-td" colspan="3"></td>
+            <td class="iw-td iw-td--num" data-sheet-final></td>
+            <td class="iw-td"></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="iw-note">
+        <tbody>
+          <tr><th class="iw-th iw-th--note" scope="col">특 이 사 항</th></tr>
+          <tr><td class="iw-note__body" data-sheet-notes></td></tr>
+        </tbody>
+      </table>
+
+      <table class="iw-foot">
+        <tbody>
+          <tr>
+            <th class="iw-th" scope="row">담당</th>
+            <td class="iw-td" data-sheet-owner></td>
+            <th class="iw-th" scope="row">연 락 처</th>
+            <td class="iw-td" data-sheet-phone></td>
+            <th class="iw-th" scope="row">결제방법</th>
+            <td class="iw-td">착수금50%,잔금50%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
