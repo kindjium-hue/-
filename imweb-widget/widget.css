@@ -6,6 +6,7 @@
   --final-fill: #ffffcc;
   --accent: #2f6df6;
   --muted: #6b7280;
+  --edge: #e3e6ea;
   --serif: "HY견명조", "Apple Myungjo", "AppleMyungjo", "NanumMyeongjo",
            "Batang", "바탕", "Times New Roman", serif;
   background: transparent;
@@ -22,7 +23,7 @@
   max-width: 420px;
   margin: 0 auto;
   padding: 28px 20px;
-  border: 1px solid #e3e6ea;
+  border: 1px solid var(--edge);
   border-radius: 14px;
   text-align: center;
 }
@@ -37,7 +38,7 @@
   max-width: var(--sheet-w);
   margin: 0 auto 24px;
   padding: 18px 16px;
-  border: 1px solid #e3e6ea;
+  border: 1px solid var(--edge);
   border-radius: 14px;
 }
 .iw-quote .iw-field { margin-bottom: 14px; }
@@ -50,6 +51,9 @@
   font-weight: 600;
   color: var(--muted);
 }
+.iw-quote .iw-input,
+.iw-quote .iw-btn,
+.iw-quote .iw-tab { box-sizing: border-box; }
 .iw-quote .iw-input {
   width: 100%;
   padding: 11px 12px;
@@ -57,7 +61,7 @@
   font-size: 16px;
   color: #1a1d21;
   background: #f7f8fa;
-  border: 1px solid #e3e6ea;
+  border: 1px solid var(--edge);
   border-radius: 10px;
   appearance: none;
 }
@@ -83,6 +87,7 @@
 }
 .iw-quote .iw-check input { width: 19px; height: 19px; flex: none; accent-color: var(--accent); }
 .iw-quote .iw-guide { margin: 12px 0 0; font-size: 13px; line-height: 1.6; color: var(--muted); }
+.iw-quote .iw-guide--mo { display: none; }
 .iw-quote .iw-warn {
   margin: 0 0 12px;
   padding: 10px 12px;
@@ -99,8 +104,99 @@
   text-decoration: none;
 }
 
+/* ------------------------------------------ 보기 전환 · 요약 카드 (모바일용) */
+
+.iw-quote .iw-viewtabs { display: none; }
+.iw-quote .iw-cards { display: none; }
+.iw-quote .iw-swipe { display: none; }
+
+.iw-quote .iw-tab {
+  flex: 1 1 0;
+  padding: 11px 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  background: #f2f4f7;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.iw-quote .iw-tab[aria-pressed="true"] {
+  color: #ffffff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.iw-quote .iw-card {
+  margin-bottom: 12px;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+}
+.iw-quote .iw-card__label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+.iw-quote .iw-card--sum { background: var(--final-fill); border-color: #e8e0a0; }
+.iw-quote .iw-card__won { display: block; font-size: 22px; font-weight: 700; }
+.iw-quote .iw-card__hangul {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: #4b5057;
+  word-break: keep-all;
+}
+.iw-quote .iw-kv {
+  display: flex;
+  gap: 10px;
+  padding: 5px 0;
+  font-size: 13px;
+  border-top: 1px solid #f1f2f4;
+}
+.iw-quote .iw-kv span { flex: 0 0 66px; color: var(--muted); }
+.iw-quote .iw-kv b { flex: 1 1 auto; font-weight: 600; word-break: break-all; }
+
+.iw-quote .iw-list {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.iw-quote .iw-listitem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  padding: 10px 13px;
+  border-top: 1px solid #f1f2f4;
+}
+.iw-quote .iw-listitem__name { font-size: 14px; font-weight: 600; word-break: keep-all; }
+.iw-quote .iw-listitem__calc { grid-row: 2; font-size: 12px; color: var(--muted); }
+.iw-quote .iw-listitem__amount {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.iw-quote .iw-listitem--total { background: #f7f8fa; }
+.iw-quote .iw-listitem--final { background: var(--final-fill); }
+.iw-quote .iw-cardnote { font-size: 13px; line-height: 1.75; word-break: keep-all; }
+.iw-quote .iw-cardnote span { display: block; }
+.iw-quote .iw-swipe { margin: 0 0 8px; font-size: 12px; color: var(--muted); }
+
 /* ------------------------------------------------------------- 견적서 본체 */
 
+.iw-quote .iw-sheetwrap { overflow-x: auto; }
 .iw-quote .iw-sheet {
   width: var(--sheet-w);
   max-width: 100%;
@@ -217,27 +313,81 @@
 }
 .iw-quote .iw-note__body span { display: block; }
 
-/* -------------------------------------------------------------------- 반응 */
+/* --------------------------------- 좁은 화면에서 양식을 통째로 줄여 맞추기 */
+/* 위젯이 놓인 칸의 너비를 재서 JS가 아래 클래스 하나를 골라 붙인다.       */
 
-@media (max-width: 768px) {
-  .iw-quote .iw-sheet {
-    width: 100%;
-    overflow-x: auto;
-  }
-  .iw-quote .iw-sheet__title { font-size: 20px; letter-spacing: 4px; }
-  .iw-quote .iw-th,
-  .iw-quote .iw-td { font-size: 10px; padding: 2px 3px; }
-  .iw-quote .iw-greet__line { font-size: 11px; }
+.iw-fit95 .iw-sheet { zoom: 0.95; }
+.iw-fit90 .iw-sheet { zoom: 0.90; }
+.iw-fit85 .iw-sheet { zoom: 0.85; }
+.iw-fit80 .iw-sheet { zoom: 0.80; }
+.iw-fit75 .iw-sheet { zoom: 0.75; }
+.iw-fit70 .iw-sheet { zoom: 0.70; }
+.iw-fit65 .iw-sheet { zoom: 0.65; }
+.iw-fit60 .iw-sheet { zoom: 0.60; }
+.iw-fit55 .iw-sheet { zoom: 0.55; }
+.iw-fit50 .iw-sheet { zoom: 0.50; }
+.iw-fit45 .iw-sheet { zoom: 0.45; }
+.iw-fit40 .iw-sheet { zoom: 0.40; }
+
+/* ------------------------------------------------------------------ 모바일 */
+/* 화면 크기가 아니라 위젯이 놓인 칸의 너비로 판단한다(아임웹 모바일 편집   */
+/* 화면은 칸만 좁아지고 화면 자체는 넓기 때문에 미디어쿼리로는 안 잡힌다). */
+
+.iw-quote.is-mobile .iw-gate { padding: 22px 16px; border-radius: 12px; }
+.iw-quote.is-mobile .iw-gate__title { font-size: 18px; }
+.iw-quote.is-mobile .iw-gate__desc { font-size: 13px; }
+.iw-quote.is-mobile .iw-gate__row { display: block; }
+.iw-quote.is-mobile .iw-gate__row .iw-input { margin-bottom: 8px; }
+.iw-quote.is-mobile .iw-btn { width: 100%; min-height: 48px; }
+
+.iw-quote.is-mobile .iw-form {
+  margin-bottom: 16px;
+  padding: 14px 12px;
+  border-radius: 12px;
+}
+.iw-quote.is-mobile .iw-row { display: block; }
+.iw-quote.is-mobile .iw-row .iw-field { margin-bottom: 14px; }
+.iw-quote.is-mobile .iw-label { font-size: 13px; }
+.iw-quote.is-mobile .iw-input { min-height: 48px; border-radius: 12px; }
+.iw-quote.is-mobile .iw-check { padding: 4px 0; font-size: 13px; }
+.iw-quote.is-mobile .iw-check input { width: 22px; height: 22px; }
+.iw-quote.is-mobile .iw-guide { font-size: 12px; }
+.iw-quote.is-mobile .iw-guide--pc { display: none; }
+.iw-quote.is-mobile .iw-guide--mo { display: block; }
+.iw-quote.is-mobile .iw-link { font-size: 13px; }
+
+.iw-quote.is-mobile .iw-viewtabs { display: flex; gap: 8px; margin-bottom: 14px; }
+.iw-quote.is-mobile .iw-cards { display: block; }
+.iw-quote.is-mobile[data-view="summary"] .iw-sheetwrap { display: none; }
+.iw-quote.is-mobile[data-view="sheet"] .iw-cards { display: none; }
+.iw-quote.is-mobile[data-view="sheet"] .iw-swipe { display: block; }
+
+/* JS가 멈춘 경우를 대비한 최소 안전장치 — 가로로 밀어서 볼 수 있게 한다 */
+
+@media (max-width: 767px) {
+  .iw-quote .iw-sheetwrap { -webkit-overflow-scrolling: touch; }
 }
 
 /* -------------------------------------------------------------------- 인쇄 */
+/* 어느 보기 모드였든 인쇄·PDF는 언제나 A4 양식 그대로 나간다.            */
 
 @media print {
   .iw-quote .iw-gate,
-  .iw-quote .iw-form { display: none; }
+  .iw-quote .iw-form,
+  .iw-quote .iw-swipe,
+  .iw-quote .iw-viewtabs,
+  .iw-quote.is-mobile .iw-viewtabs,
+  .iw-quote.is-mobile[data-view="sheet"] .iw-swipe { display: none; }
+  .iw-quote .iw-cards,
+  .iw-quote.is-mobile .iw-cards,
+  .iw-quote.is-mobile[data-view="sheet"] .iw-cards { display: none; }
+  .iw-quote .iw-sheetwrap,
+  .iw-quote.is-mobile[data-view="summary"] .iw-sheetwrap { display: block; overflow: visible; }
   .iw-quote .iw-sheet {
     width: 190mm;
+    max-width: none;
     padding: 0;
+    zoom: 1;
   }
   .iw-quote .iw-th,
   .iw-quote .iw-td { font-size: 10.5pt; }

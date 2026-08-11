@@ -4,3 +4,5 @@ __pycache__/
 .venv/
 widget-preview.html
 seal.png
+shot-*.png
+widget-mobile.png

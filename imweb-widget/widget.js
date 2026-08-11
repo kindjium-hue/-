@@ -1,5 +1,6 @@
 /* 견적서 생성기 — 평수를 넣으면 회사 양식대로 견적서를 채운다.
-   금액 계산은 파이썬 생성기(quote.py)와 같은 규칙을 쓴다. */
+   금액 계산은 파이썬 생성기(quote.py)와 같은 규칙을 쓴다.
+   화면 폭이 아니라 위젯이 놓인 칸의 너비를 재서 모바일 배치로 바꾼다. */
 
 const PYEONG_TO_M2 = 3.3058;
 const AMOUNT_STEP = 1000; // 조정한 금액은 1,000원 단위
@@ -7,6 +8,10 @@ const PRICE_UNIT = 10; // 조정한 단가는 10원 단위
 const DIGITS = "영일이삼사오육칠팔구";
 const SMALL_UNITS = ["", "십", "백", "천"];
 const BIG_UNITS = ["", "만", "억", "조"];
+
+const MOBILE_MAX = 620; // 이보다 좁으면 모바일 배치
+const SHEET_PX = 718; // 견적서 폭 190mm를 픽셀로 환산한 값
+const FIT_STEPS = [95, 90, 85, 80, 75, 70, 65, 60, 55, 50, 45, 40];
 
 const BRANDS = {
   roof: {
@@ -74,6 +79,9 @@ const dateInput = pick("date");
 const areaHint = pick("area-hint");
 const warnBox = pick("warn");
 const formLink = pick("form-link");
+const sheetWrap = pick("sheet-wrap");
+const summaryTab = pick("view-summary");
+const sheetTab = pick("view-sheet");
 
 const toNumber = (text) => {
   const cleaned = String(text || "").replace(/[^\d.]/g, "");
@@ -212,13 +220,61 @@ const renderRows = (rows, projectLines) => {
 };
 
 const renderNotes = (lines) => {
-  const box = pick("sheet-notes");
-  box.innerHTML = "";
-  for (let i = 0; i < lines.length; i += 1) {
-    const span = document.createElement("span");
-    span.textContent = lines[i];
-    box.appendChild(span);
+  const boxes = [pick("sheet-notes"), pick("card-notes")];
+  for (let box = 0; box < boxes.length; box += 1) {
+    boxes[box].innerHTML = "";
+    for (let i = 0; i < lines.length; i += 1) {
+      const span = document.createElement("span");
+      span.textContent = lines[i];
+      boxes[box].appendChild(span);
+    }
   }
+};
+
+/** 요약 카드 한 줄 (품목 이름 · 수량×단가 · 금액) */
+const listItem = (name, calc, amount, extra) => {
+  const li = document.createElement("li");
+  li.className = extra ? `iw-listitem ${extra}` : "iw-listitem";
+  const title = document.createElement("span");
+  title.className = "iw-listitem__name";
+  title.textContent = name;
+  const detail = document.createElement("span");
+  detail.className = "iw-listitem__calc";
+  detail.textContent = calc;
+  const money = document.createElement("b");
+  money.className = "iw-listitem__amount";
+  money.textContent = `${won(amount)}원`;
+  li.appendChild(title);
+  li.appendChild(detail);
+  li.appendChild(money);
+  return li;
+};
+
+/** 휴대폰에서 표 대신 읽는 요약 화면 */
+const renderCards = (rows, brand, subtotal, billed, area) => {
+  const list = pick("card-rows");
+  list.innerHTML = "";
+  for (let i = 0; i < rows.length; i += 1) {
+    const row = rows[i];
+    const calc = `${quantityText(row.quantity)} × ${won(row.unit)}원`;
+    list.appendChild(listItem(row.name, calc, row.amount, ""));
+  }
+  if (rows.length > 0) {
+    list.appendChild(listItem("합계", "부가세 별도", subtotal, "iw-listitem--total"));
+    if (billed !== subtotal) {
+      list.appendChild(listItem("최종 네고 금액", "부가세 별도", billed, "iw-listitem--final"));
+    }
+  }
+
+  pick("card-won").textContent = area > 0 ? `${won(billed)}원` : "-";
+  pick("card-hangul").textContent = area > 0 ? `일금 ${koreanAmount(billed)}원정` : "";
+  pick("card-customer").textContent = customerInput.value.trim();
+  pick("card-date").textContent = dateText(dateInput.value);
+  pick("card-project").textContent = brand.project.join(" ");
+  pick("card-company").textContent = brand.name;
+  pick("card-biz").textContent = brand.biz;
+  pick("card-owner").textContent = brand.owner;
+  pick("card-phone").textContent = brand.phone;
 };
 
 const dateText = (value) => {
@@ -262,6 +318,34 @@ const render = () => {
 
   renderRows(rows, brand.project);
   renderNotes(brand.notes);
+  renderCards(rows, brand, subtotal, billed, area);
+};
+
+/** 양식이 칸 안에 들어오도록 축소 비율 클래스를 하나 골라 붙인다 */
+const setFit = (width) => {
+  for (let i = 0; i < FIT_STEPS.length; i += 1) {
+    sheetWrap.classList.remove(`iw-fit${FIT_STEPS[i]}`);
+  }
+  if (width <= 0 || width >= SHEET_PX) return;
+  const percent = Math.floor(((width - 2) / SHEET_PX) * 20) * 5;
+  const step = Math.max(40, Math.min(95, percent));
+  sheetWrap.classList.add(`iw-fit${step}`);
+};
+
+/** 위젯이 놓인 칸의 너비로 모바일 여부를 정한다 */
+const applyWidth = () => {
+  const width = root.offsetWidth || window.innerWidth || 0;
+  if (width <= 0) return;
+  if (width < MOBILE_MAX) root.classList.add("is-mobile");
+  else root.classList.remove("is-mobile");
+  setFit(width);
+};
+
+const setView = (mode) => {
+  root.setAttribute("data-view", mode);
+  summaryTab.setAttribute("aria-pressed", mode === "summary" ? "true" : "false");
+  sheetTab.setAttribute("aria-pressed", mode === "sheet" ? "true" : "false");
+  applyWidth();
 };
 
 const openPanel = () => {
@@ -269,6 +353,7 @@ const openPanel = () => {
   panel.hidden = false;
   gate.hidden = true;
   render();
+  applyWidth();
 };
 
 const checkPin = () => {
@@ -305,11 +390,21 @@ const setup = () => {
     if (event.key === "Enter") checkPin();
   });
 
+  summaryTab.addEventListener("click", () => setView("summary"));
+  sheetTab.addEventListener("click", () => setView("sheet"));
+
   const watched = [workSelect, customerInput, areaInput, finalInput, matchInput, dateInput];
   for (let i = 0; i < watched.length; i += 1) {
     watched[i].addEventListener("input", render);
     watched[i].addEventListener("change", render);
   }
+
+  applyWidth();
+  if (typeof ResizeObserver === "function") {
+    const watcher = new ResizeObserver(() => applyWidth());
+    watcher.observe(root);
+  }
+  window.addEventListener("resize", applyWidth);
 
   if (String(root.getAttribute("data-pin") || "").trim() === "") openPanel();
 };

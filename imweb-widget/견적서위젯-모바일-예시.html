@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>아임웹 견적서 위젯 — 모바일 화면 예시</title>
+<style>
+body { margin: 0; padding: 20px 12px 40px; background: #eef0f3;
+  font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+h2 { max-width: 390px; margin: 24px auto 10px; font-size: 15px; color: #4b5057; }
+.phone { width: 390px; margin: 0 auto; padding: 14px 8px; background: #fff;
+  border: 1px solid #d7dbe0; border-radius: 22px; }
+.iw-quote {
+  --sheet-w: 190mm;
+  --line: #000000;
+  --thin: #808080;
+  --head-fill: #dde9f7;
+  --final-fill: #ffffcc;
+  --accent: #2f6df6;
+  --muted: #6b7280;
+  --edge: #e3e6ea;
+  --serif: "HY견명조", "Apple Myungjo", "AppleMyungjo", "NanumMyeongjo",
+           "Batang", "바탕", "Times New Roman", serif;
+  background: transparent;
+  color: #1a1d21;
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+               "Malgun Gothic", sans-serif;
+}
+
+.iw-quote[data-state="open"] .iw-gate { display: none; }
+
+/* ------------------------------------------------------------------ 게이트 */
+
+.iw-quote .iw-gate {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 28px 20px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  text-align: center;
+}
+.iw-quote .iw-gate__title { margin: 0 0 6px; font-size: 20px; font-weight: 700; }
+.iw-quote .iw-gate__desc { margin: 0 0 16px; font-size: 14px; color: var(--muted); }
+.iw-quote .iw-gate__row { display: flex; gap: 8px; }
+.iw-quote .iw-gate__error { margin: 10px 0 0; font-size: 14px; color: #d33b3b; }
+
+/* -------------------------------------------------------------------- 입력 */
+
+.iw-quote .iw-form {
+  max-width: var(--sheet-w);
+  margin: 0 auto 24px;
+  padding: 18px 16px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+}
+.iw-quote .iw-field { margin-bottom: 14px; }
+.iw-quote .iw-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.iw-quote .iw-row .iw-field { flex: 1 1 180px; min-width: 0; }
+.iw-quote .iw-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.iw-quote .iw-input,
+.iw-quote .iw-btn,
+.iw-quote .iw-tab { box-sizing: border-box; }
+.iw-quote .iw-input {
+  width: 100%;
+  padding: 11px 12px;
+  font-family: inherit;
+  font-size: 16px;
+  color: #1a1d21;
+  background: #f7f8fa;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  appearance: none;
+}
+.iw-quote .iw-btn {
+  flex: 0 0 auto;
+  padding: 11px 18px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--accent);
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.iw-quote .iw-hint { display: block; margin-top: 5px; font-size: 13px; color: var(--muted); }
+.iw-quote .iw-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+.iw-quote .iw-check input { width: 19px; height: 19px; flex: none; accent-color: var(--accent); }
+.iw-quote .iw-guide { margin: 12px 0 0; font-size: 13px; line-height: 1.6; color: var(--muted); }
+.iw-quote .iw-guide--mo { display: none; }
+.iw-quote .iw-warn {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #a33;
+  background: rgba(211, 59, 59, 0.08);
+  border-radius: 10px;
+}
+.iw-quote .iw-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* ------------------------------------------ 보기 전환 · 요약 카드 (모바일용) */
+
+.iw-quote .iw-viewtabs { display: none; }
+.iw-quote .iw-cards { display: none; }
+.iw-quote .iw-swipe { display: none; }
+
+.iw-quote .iw-tab {
+  flex: 1 1 0;
+  padding: 11px 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  background: #f2f4f7;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.iw-quote .iw-tab[aria-pressed="true"] {
+  color: #ffffff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.iw-quote .iw-card {
+  margin-bottom: 12px;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+}
+.iw-quote .iw-card__label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+.iw-quote .iw-card--sum { background: var(--final-fill); border-color: #e8e0a0; }
+.iw-quote .iw-card__won { display: block; font-size: 22px; font-weight: 700; }
+.iw-quote .iw-card__hangul {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: #4b5057;
+  word-break: keep-all;
+}
+.iw-quote .iw-kv {
+  display: flex;
+  gap: 10px;
+  padding: 5px 0;
+  font-size: 13px;
+  border-top: 1px solid #f1f2f4;
+}
+.iw-quote .iw-kv span { flex: 0 0 66px; color: var(--muted); }
+.iw-quote .iw-kv b { flex: 1 1 auto; font-weight: 600; word-break: break-all; }
+
+.iw-quote .iw-list {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.iw-quote .iw-listitem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  padding: 10px 13px;
+  border-top: 1px solid #f1f2f4;
+}
+.iw-quote .iw-listitem__name { font-size: 14px; font-weight: 600; word-break: keep-all; }
+.iw-quote .iw-listitem__calc { grid-row: 2; font-size: 12px; color: var(--muted); }
+.iw-quote .iw-listitem__amount {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.iw-quote .iw-listitem--total { background: #f7f8fa; }
+.iw-quote .iw-listitem--final { background: var(--final-fill); }
+.iw-quote .iw-cardnote { font-size: 13px; line-height: 1.75; word-break: keep-all; }
+.iw-quote .iw-cardnote span { display: block; }
+.iw-quote .iw-swipe { margin: 0 0 8px; font-size: 12px; color: var(--muted); }
+
+/* ------------------------------------------------------------- 견적서 본체 */
+
+.iw-quote .iw-sheetwrap { overflow-x: auto; }
+.iw-quote .iw-sheet {
+  width: var(--sheet-w);
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 4mm 0 6mm;
+  background: #ffffff;
+  font-family: var(--serif);
+  color: #000000;
+}
+.iw-quote .iw-sheet__title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 6px;
+  text-align: center;
+}
+.iw-quote .iw-sheet__rule {
+  width: 44%;
+  height: 2px;
+  margin: 4px auto 10px;
+  background: #a5a5a5;
+}
+.iw-quote .iw-sheet table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.iw-quote .iw-top { border: 2px solid var(--line); }
+.iw-quote .iw-main { border: 2px solid var(--line); border-top: 0; }
+.iw-quote .iw-note { margin-top: 6px; border: 2px solid var(--line); }
+.iw-quote .iw-foot { margin-top: 5px; border: 2px solid var(--line); }
+
+.iw-quote .iw-th,
+.iw-quote .iw-td {
+  padding: 3px 5px;
+  font-size: 11px;
+  font-weight: 400;
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid var(--thin);
+  word-break: keep-all;
+}
+.iw-quote .iw-th { background: var(--head-fill); letter-spacing: 1px; }
+.iw-quote .iw-td { background: #ffffff; }
+.iw-quote .iw-td--num { text-align: right; font-size: 10px; padding-right: 8px; }
+.iw-quote .iw-td--addr { font-size: 10px; }
+
+.iw-quote .iw-top .iw-greet {
+  width: 39.5%;
+  padding: 10px 6px;
+  text-align: center;
+  border: 1px solid var(--line);
+  background: #ffffff;
+}
+.iw-quote .iw-greet__line {
+  display: block;
+  padding: 6px 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+.iw-quote .iw-vlabel {
+  width: 5.2%;
+  padding: 6px 0;
+  text-align: center;
+  background: var(--head-fill);
+  border: 1px solid var(--line);
+}
+.iw-quote .iw-vlabel span { display: block; padding: 5px 0; font-size: 12px; font-weight: 700; }
+.iw-quote .iw-td--seal { position: relative; padding-right: 34px; }
+.iw-quote .iw-seal {
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  width: 34px;
+  height: auto;
+  margin-top: -17px;
+}
+
+.iw-quote .iw-col1 { width: 22.2%; }
+.iw-quote .iw-col2 { width: 22.5%; }
+.iw-quote .iw-col3 { width: 11.5%; }
+.iw-quote .iw-col4 { width: 17%; }
+.iw-quote .iw-col5 { width: 16%; }
+.iw-quote .iw-col6 { width: 10.8%; }
+
+.iw-quote .iw-sum .iw-th--sum { padding: 7px 4px; font-size: 12px; font-weight: 700; }
+.iw-quote .iw-sum .iw-th--sum small { font-size: 11px; }
+.iw-quote .iw-td--sum { background: var(--head-fill); font-size: 13px; font-weight: 700; }
+.iw-quote .iw-head .iw-th { padding: 5px 4px; font-size: 11px; font-weight: 700; }
+.iw-quote .iw-item { height: 30px; }
+.iw-quote .iw-item .iw-name { font-size: 12px; font-weight: 700; }
+.iw-quote .iw-project {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 2;
+  text-align: center;
+  border: 1px solid var(--thin);
+  background: #ffffff;
+}
+.iw-quote .iw-project span { display: block; }
+.iw-quote .iw-blank td { height: 46px; }
+.iw-quote .iw-th--plain { background: #ffffff; font-weight: 700; font-size: 11px; }
+.iw-quote .iw-final .iw-th--plain,
+.iw-quote .iw-final .iw-td { background: var(--final-fill); }
+
+.iw-quote .iw-th--note { padding: 5px; font-size: 12px; font-weight: 700; letter-spacing: 4px; }
+.iw-quote .iw-note__body {
+  padding: 7px 10px;
+  font-size: 11px;
+  line-height: 1.85;
+  text-align: left;
+  border: 1px solid var(--thin);
+  background: #ffffff;
+}
+.iw-quote .iw-note__body span { display: block; }
+
+/* --------------------------------- 좁은 화면에서 양식을 통째로 줄여 맞추기 */
+/* 위젯이 놓인 칸의 너비를 재서 JS가 아래 클래스 하나를 골라 붙인다.       */
+
+.iw-fit95 .iw-sheet { zoom: 0.95; }
+.iw-fit90 .iw-sheet { zoom: 0.90; }
+.iw-fit85 .iw-sheet { zoom: 0.85; }
+.iw-fit80 .iw-sheet { zoom: 0.80; }
+.iw-fit75 .iw-sheet { zoom: 0.75; }
+.iw-fit70 .iw-sheet { zoom: 0.70; }
+.iw-fit65 .iw-sheet { zoom: 0.65; }
+.iw-fit60 .iw-sheet { zoom: 0.60; }
+.iw-fit55 .iw-sheet { zoom: 0.55; }
+.iw-fit50 .iw-sheet { zoom: 0.50; }
+.iw-fit45 .iw-sheet { zoom: 0.45; }
+.iw-fit40 .iw-sheet { zoom: 0.40; }
+
+/* ------------------------------------------------------------------ 모바일 */
+/* 화면 크기가 아니라 위젯이 놓인 칸의 너비로 판단한다(아임웹 모바일 편집   */
+/* 화면은 칸만 좁아지고 화면 자체는 넓기 때문에 미디어쿼리로는 안 잡힌다). */
+
+.iw-quote.is-mobile .iw-gate { padding: 22px 16px; border-radius: 12px; }
+.iw-quote.is-mobile .iw-gate__title { font-size: 18px; }
+.iw-quote.is-mobile .iw-gate__desc { font-size: 13px; }
+.iw-quote.is-mobile .iw-gate__row { display: block; }
+.iw-quote.is-mobile .iw-gate__row .iw-input { margin-bottom: 8px; }
+.iw-quote.is-mobile .iw-btn { width: 100%; min-height: 48px; }
+
+.iw-quote.is-mobile .iw-form {
+  margin-bottom: 16px;
+  padding: 14px 12px;
+  border-radius: 12px;
+}
+.iw-quote.is-mobile .iw-row { display: block; }
+.iw-quote.is-mobile .iw-row .iw-field { margin-bottom: 14px; }
+.iw-quote.is-mobile .iw-label { font-size: 13px; }
+.iw-quote.is-mobile .iw-input { min-height: 48px; border-radius: 12px; }
+.iw-quote.is-mobile .iw-check { padding: 4px 0; font-size: 13px; }
+.iw-quote.is-mobile .iw-check input { width: 22px; height: 22px; }
+.iw-quote.is-mobile .iw-guide { font-size: 12px; }
+.iw-quote.is-mobile .iw-guide--pc { display: none; }
+.iw-quote.is-mobile .iw-guide--mo { display: block; }
+.iw-quote.is-mobile .iw-link { font-size: 13px; }
+
+.iw-quote.is-mobile .iw-viewtabs { display: flex; gap: 8px; margin-bottom: 14px; }
+.iw-quote.is-mobile .iw-cards { display: block; }
+.iw-quote.is-mobile[data-view="summary"] .iw-sheetwrap { display: none; }
+.iw-quote.is-mobile[data-view="sheet"] .iw-cards { display: none; }
+.iw-quote.is-mobile[data-view="sheet"] .iw-swipe { display: block; }
+
+/* JS가 멈춘 경우를 대비한 최소 안전장치 — 가로로 밀어서 볼 수 있게 한다 */
+
+@media (max-width: 767px) {
+  .iw-quote .iw-sheetwrap { -webkit-overflow-scrolling: touch; }
+}
+
+/* -------------------------------------------------------------------- 인쇄 */
+/* 어느 보기 모드였든 인쇄·PDF는 언제나 A4 양식 그대로 나간다.            */
+
+@media print {
+  .iw-quote .iw-gate,
+  .iw-quote .iw-form,
+  .iw-quote .iw-swipe,
+  .iw-quote .iw-viewtabs,
+  .iw-quote.is-mobile .iw-viewtabs,
+  .iw-quote.is-mobile[data-view="sheet"] .iw-swipe { display: none; }
+  .iw-quote .iw-cards,
+  .iw-quote.is-mobile .iw-cards,
+  .iw-quote.is-mobile[data-view="sheet"] .iw-cards { display: none; }
+  .iw-quote .iw-sheetwrap,
+  .iw-quote.is-mobile[data-view="summary"] .iw-sheetwrap { display: block; overflow: visible; }
+  .iw-quote .iw-sheet {
+    width: 190mm;
+    max-width: none;
+    padding: 0;
+    zoom: 1;
+  }
+  .iw-quote .iw-th,
+  .iw-quote .iw-td { font-size: 10.5pt; }
+  .iw-quote .iw-item { height: 9mm; }
+  .iw-quote .iw-blank td { height: 14mm; }
+}
+
+</style></head><body>
+<h2>① 요약 보기 — 휴대폰에서 기본으로 보이는 화면</h2>
+<div class="phone"><section class="iw-quote is-mobile" data-state="open" data-view="summary" data-quote-root="" data-pin="8282" data-form-url="" data-roof-base="20000" data-roof-wash="15000" data-roof-crack="10000" data-roof-coat1="15000" data-roof-coat2="30000" data-roof-coat3="20000" data-roof-waste="200000" data-roof-clean="200000" data-wall-crack="25000" data-wall-coat="30000" data-wall-sky="700000" data-wall-clean="200000" data-wall-etc="200000">
+
+  
+
+  <div class="iw-panel" data-panel="">
+    <section class="iw-form" role="form" aria-label="견적 입력">
+      <div class="iw-field">
+        <label class="iw-label" for="iw-work">작업항목</label>
+        <select class="iw-input" id="iw-work" data-work="">
+          <option value="roof" selected="">옥상방수 (청명옥상방수)</option>
+          <option value="wall">외벽방수 (청명종합설비)</option>
+        </select>
+      </div>
+      <div class="iw-field">
+        <label class="iw-label" for="iw-customer">고객명 · 현장명</label>
+        <input class="iw-input" id="iw-customer" type="text" placeholder="예) 카카오프렌즈 지곡점" data-customer="" value="카카오프렌즈 지곡점">
+      </div>
+      <div class="iw-row">
+        <div class="iw-field">
+          <label class="iw-label" for="iw-area">평수</label>
+          <input class="iw-input" id="iw-area" type="text" inputmode="decimal" placeholder="51" data-area="" value="51">
+          <span class="iw-hint" data-area-hint="">≈ 168.6㎡</span>
+        </div>
+        <div class="iw-field">
+          <label class="iw-label" for="iw-final">최종 금액 (원)</label>
+          <input class="iw-input" id="iw-final" type="text" inputmode="numeric" placeholder="비우면 합계 그대로" data-final="" value="">
+        </div>
+      </div>
+      <label class="iw-check">
+        <input type="checkbox" data-match="">
+        <span>최종 금액에 맞춰 단가 조정 (방수코트 비율 유지)</span>
+      </label>
+      <div class="iw-field">
+        <label class="iw-label" for="iw-date">견적일</label>
+        <input class="iw-input" id="iw-date" type="date" data-date="" value="2026-08-11">
+      </div>
+      <p class="iw-warn" data-warn="" hidden=""></p>
+      <p class="iw-guide iw-guide--pc">
+        아래 견적서가 바로 채워집니다. PDF로 받으시려면 키보드
+        <b>Command + P</b> (윈도우는 <b>Ctrl + P</b>) 를 누르고 <b>PDF로 저장</b>을 고르세요.
+      </p>
+      <p class="iw-guide iw-guide--mo">
+        아래에 견적서가 바로 채워집니다. 휴대폰에서 PDF로 남기려면
+        아이폰은 <b>공유 → 프린트</b>, 안드로이드 크롬은 <b>오른쪽 위 메뉴 → 공유 → 인쇄</b>에서
+        <b>PDF로 저장</b>을 고르세요.
+      </p>
+      <a class="iw-link" href="/" data-form-link="" hidden="">사진까지 올리고 노션에 등록하려면 → 웹 폼 열기</a>
+    </section>
+
+    <div class="iw-viewtabs" role="group" aria-label="보기 방식">
+      <button class="iw-tab" type="button" aria-pressed="true" data-view-summary="">요약 보기</button>
+      <button class="iw-tab" type="button" aria-pressed="false" data-view-sheet="">견적서 양식</button>
+    </div>
+
+    <div class="iw-cards" data-cards="">
+      <div class="iw-card iw-card--sum">
+        <span class="iw-card__label">합 계 금 액 (부가세별도)</span>
+        <b class="iw-card__won" data-card-won="">6,010,000원</b>
+        <span class="iw-card__hangul" data-card-hangul="">일금 육백일만원정</span>
+      </div>
+      <ul class="iw-list" data-card-rows=""><li class="iw-listitem"><span class="iw-listitem__name">바탕면작업</span><span class="iw-listitem__calc">51 × 20,000원</span><b class="iw-listitem__amount">1,020,000원</b></li><li class="iw-listitem"><span class="iw-listitem__name">고압세척</span><span class="iw-listitem__calc">51 × 15,000원</span><b class="iw-listitem__amount">765,000원</b></li><li class="iw-listitem"><span class="iw-listitem__name">크랙보수</span><span class="iw-listitem__calc">51 × 10,000원</span><b class="iw-listitem__amount">510,000원</b></li><li class="iw-listitem"><span class="iw-listitem__name">하도 방수코트</span><span class="iw-listitem__calc">51 × 15,000원</span><b class="iw-listitem__amount">765,000원</b></li><li class="iw-listitem"><span class="iw-listitem__name">중도 방수코트</span><span class="iw-listitem__calc">51 × 30,000원</span><b class="iw-listitem__amount">1,530,000원</b></li><li class="iw-listitem"><span class="iw-listitem__name">상도 방수코트</span><span class="iw-listitem__calc">51 × 20,000원</span><b class="iw-listitem__amount">1,020,000원</b></li><li class="iw-listitem"><span class="iw-listitem__name">폐기물처리</span><span class="iw-listitem__calc">1 × 200,000원</span><b class="iw-listitem__amount">200,000원</b></li><li class="iw-listitem"><span class="iw-listitem__name">보양•청소</span><span class="iw-listitem__calc">1 × 200,000원</span><b class="iw-listitem__amount">200,000원</b></li><li class="iw-listitem iw-listitem--total"><span class="iw-listitem__name">합계</span><span class="iw-listitem__calc">부가세 별도</span><b class="iw-listitem__amount">6,010,000원</b></li></ul>
+      <div class="iw-card">
+        <span class="iw-card__label">공사 · 공급자</span>
+        <div class="iw-kv"><span>고객</span><b data-card-customer="">카카오프렌즈 지곡점</b></div>
+        <div class="iw-kv"><span>견적일</span><b data-card-date="">2026 년 8 월 11일</b></div>
+        <div class="iw-kv"><span>공사명</span><b data-card-project="">옥상 바닥 방수</b></div>
+        <div class="iw-kv"><span>상호</span><b data-card-company="">청명옥상방수</b></div>
+        <div class="iw-kv"><span>등록번호</span><b data-card-biz="">254-11-02805</b></div>
+        <div class="iw-kv"><span>대표자</span><b>윤병동</b></div>
+        <div class="iw-kv"><span>담당</span><b data-card-owner="">송경훈</b></div>
+        <div class="iw-kv"><span>연락처</span><b data-card-phone="">010-4156-4043</b></div>
+        <div class="iw-kv"><span>결제방법</span><b>착수금 50% · 잔금 50%</b></div>
+      </div>
+      <div class="iw-card">
+        <span class="iw-card__label">특 이 사 항</span>
+        <div class="iw-cardnote" data-card-notes=""><span>* 공사명: 옥상 방수 공사</span><span>* 공사일자: 협의(1-2일 소요)</span><span>* 작업방법: 바탕면 정리 → 고압세척 → 프라이머 → 크랙보수 → 하도 작업 → 중도 작업 → 상도작업 → 검수</span><span>* 보증기간: 작업구간에 한하여 2년 보증. (다른 부분에 의한 누수는 제외)</span></div>
+      </div>
+    </div>
+
+    <p class="iw-swipe">종이 양식 그대로입니다. 글씨가 작으면 <b>요약 보기</b>로 확인하세요.</p>
+
+    <div class="iw-sheetwrap iw-fit50" data-sheet-wrap="">
+      <div class="iw-sheet" data-sheet="">
+        <h1 class="iw-sheet__title">견 적 서</h1>
+        <div class="iw-sheet__rule"></div>
+
+        <table class="iw-top">
+          <tbody>
+            <tr>
+              <td class="iw-greet" rowspan="5">
+                <span class="iw-greet__line" data-sheet-date="">2026 년 8 월 11일</span>
+                <span class="iw-greet__line" data-sheet-customer="">카카오프렌즈 지곡점 귀중</span>
+                <span class="iw-greet__line">아래와 같이 견적합니다.</span>
+              </td>
+              <td class="iw-vlabel" rowspan="5"><span>공</span><span>급</span><span>자</span></td>
+              <th class="iw-th" scope="row">등록번호</th>
+              <td class="iw-td" colspan="3" data-sheet-biz="">254-11-02805</td>
+            </tr>
+            <tr>
+              <th class="iw-th" scope="row">상 호 명</th>
+              <td class="iw-td" data-sheet-company="">청명옥상방수</td>
+              <th class="iw-th" scope="row">대 표 자</th>
+              <td class="iw-td iw-td--seal">
+                <span>윤병동</span>
+                <img class="iw-seal" src="seal.png" alt="대표자 도장">
+              </td>
+            </tr>
+            <tr>
+              <th class="iw-th" scope="row">주 소</th>
+              <td class="iw-td iw-td--addr" colspan="3" data-sheet-addr="">경기 용인시 기흥구 동백죽전대로 205 B202호 D065</td>
+            </tr>
+            <tr>
+              <th class="iw-th" scope="row">업 태</th>
+              <td class="iw-td">건설업</td>
+              <th class="iw-th" scope="row">종 목</th>
+              <td class="iw-td" data-sheet-category="">방수미장 공사업</td>
+            </tr>
+            <tr>
+              <th class="iw-th" scope="row">전화번호</th>
+              <td class="iw-td">010-5117-8877</td>
+              <th class="iw-th" scope="row">팩 스</th>
+              <td class="iw-td">0504-068-5074</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="iw-main">
+          <colgroup>
+            <col class="iw-col1"><col class="iw-col2"><col class="iw-col3">
+            <col class="iw-col4"><col class="iw-col5"><col class="iw-col6">
+          </colgroup>
+          <tbody>
+            <tr class="iw-sum">
+              <th class="iw-th iw-th--sum" scope="row">합 계 금 액<br><small>(부가세별도)</small></th>
+              <td class="iw-td iw-td--sum" colspan="5" data-sheet-hangul="">일금 육백일만원정 ₩6,010,000</td>
+            </tr>
+            <tr class="iw-head">
+              <th class="iw-th" scope="col">공사명</th>
+              <th class="iw-th" scope="col">품목</th>
+              <th class="iw-th" scope="col">수량</th>
+              <th class="iw-th" scope="col">단가</th>
+              <th class="iw-th" scope="col">금액</th>
+              <th class="iw-th" scope="col">비고</th>
+            </tr>
+          </tbody>
+          <tbody data-sheet-rows=""><tr class="iw-item"><td class="iw-project" rowspan="8"><span>옥상</span><span>바닥 방수</span></td><td class="iw-td iw-name">바탕면작업</td><td class="iw-td">51</td><td class="iw-td iw-td--num">20,000</td><td class="iw-td iw-td--num">1,020,000</td><td class="iw-td"></td></tr><tr class="iw-item"><td class="iw-td iw-name">고압세척</td><td class="iw-td">51</td><td class="iw-td iw-td--num">15,000</td><td class="iw-td iw-td--num">765,000</td><td class="iw-td"></td></tr><tr class="iw-item"><td class="iw-td iw-name">크랙보수</td><td class="iw-td">51</td><td class="iw-td iw-td--num">10,000</td><td class="iw-td iw-td--num">510,000</td><td class="iw-td"></td></tr><tr class="iw-item"><td class="iw-td iw-name">하도 방수코트</td><td class="iw-td">51</td><td class="iw-td iw-td--num">15,000</td><td class="iw-td iw-td--num">765,000</td><td class="iw-td"></td></tr><tr class="iw-item"><td class="iw-td iw-name">중도 방수코트</td><td class="iw-td">51</td><td class="iw-td iw-td--num">30,000</td><td class="iw-td iw-td--num">1,530,000</td><td class="iw-td"></td></tr><tr class="iw-item"><td class="iw-td iw-name">상도 방수코트</td><td class="iw-td">51</td><td class="iw-td iw-td--num">20,000</td><td class="iw-td iw-td--num">1,020,000</td><td class="iw-td"></td></tr><tr class="iw-item"><td class="iw-td iw-name">폐기물처리</td><td class="iw-td">1</td><td class="iw-td iw-td--num">200,000</td><td class="iw-td iw-td--num">200,000</td><td class="iw-td"></td></tr><tr class="iw-item"><td class="iw-td iw-name">보양•청소</td><td class="iw-td">1</td><td class="iw-td iw-td--num">200,000</td><td class="iw-td iw-td--num">200,000</td><td class="iw-td"></td></tr><tr class="iw-blank"><td class="iw-td"></td><td class="iw-td"></td><td class="iw-td"></td><td class="iw-td"></td><td class="iw-td"></td></tr></tbody>
+          <tbody>
+            <tr class="iw-total">
+              <th class="iw-th iw-th--plain" scope="row">합계</th>
+              <td class="iw-td" colspan="3"></td>
+              <td class="iw-td iw-td--num" data-sheet-subtotal="">6,010,000</td>
+              <td class="iw-td"></td>
+            </tr>
+            <tr class="iw-final">
+              <th class="iw-th iw-th--plain" scope="row">최종 네고 금액</th>
+              <td class="iw-td" colspan="3"></td>
+              <td class="iw-td iw-td--num" data-sheet-final="">6,010,000</td>
+              <td class="iw-td"></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="iw-note">
+          <tbody>
+            <tr><th class="iw-th iw-th--note" scope="col">특 이 사 항</th></tr>
+            <tr><td class="iw-note__body" data-sheet-notes=""><span>* 공사명: 옥상 방수 공사</span><span>* 공사일자: 협의(1-2일 소요)</span><span>* 작업방법: 바탕면 정리 → 고압세척 → 프라이머 → 크랙보수 → 하도 작업 → 중도 작업 → 상도작업 → 검수</span><span>* 보증기간: 작업구간에 한하여 2년 보증. (다른 부분에 의한 누수는 제외)</span></td></tr>
+          </tbody>
+        </table>
+
+        <table class="iw-foot">
+          <tbody>
+            <tr>
+              <th class="iw-th" scope="row">담당</th>
+              <td class="iw-td" data-sheet-owner="">송경훈</td>
+              <th class="iw-th" scope="row">연 락 처</th>
+              <td class="iw-td" data-sheet-phone="">010-4156-4043</td>
+              <th class="iw-th" scope="row">결제방법</th>
+              <td class="iw-td">착수금50%,잔금50%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section></div>
+<h2>② 견적서 양식 — 종이 양식 그대로 폭에 맞춰 줄여서 보여 줍니다</h2>
+<div class="phone"><section class="iw-quote is-mobile" data-state="open" data-view="sheet" data-quote-root="" data-pin="8282" data-form-url="" data-roof-base="20000" data-roof-wash="15000" data-roof-crack="10000" data-roof-coat1="15000" data-roof-coat2="30000" data-roof-coat3="20000" data-roof-waste="200000" data-roof-clean="200000" data-wall-crack="25000" data-wall-coat="30000" data-wall-sky="700000" data-wall-clean="200000" data-wall-etc="200000">
+
+  
+
+  <div class="iw-panel" data-panel="">
+    <section class="iw-form" role="form" aria-label="견적 입력">
+      <div class="iw-field">
+        <label class="iw-label" for="iw-work">작업항목</label>
+        <select class="iw-input" id="iw-work" data-work="">
+          <option value="roof" selected="">옥상방수 (청명옥상방수)</option>
+          <option value="wall">외벽방수 (청명종합설비)</option>
+        </select>
+      </div>
+      <div class="iw-field">
+        <label class="iw-label" for="iw-customer">고객명 · 현장명</label>
+        <input class="iw-input" id="iw-customer" type="text" placeholder="예) 카카오프렌즈 지곡점" data-customer="" value="카카오프렌즈 지곡점">
+      </div>
+      <div class="iw-row">
+        <div class="iw-field">
+          <label class="iw-label" for="iw-area">평수</label>
+          <input class="iw-input" id="iw-area" type="text" inputmode="decimal" placeholder="51" data-area="" value="51">
+          <span class="iw-hint" data-area-hint="">≈ 168.6㎡</span>
+        </div>
+        <div class="iw-field">
+          <label class="iw-label" for="iw-final">최종 금액 (원)</label>
+          <input class="iw-input" id="iw-final" type="text" inputmode="numeric" placeholder="비우면 합계 그대로" data-final="" value="">
+        </div>
+      </div>
+      <label class="iw-check">
+        <input type="checkbox" data-match="">
+        <span>최종 금액에 맞춰 단가 조정 (방수코트 비율 유지)</span>
+      </label>
+      <div class="iw-field">
+        <label class="iw-label" for="iw-date">견적일</label>
+        <input class="iw-input" id="iw-date" type="date" data-date="" value="2026-08-11">
+      </div>
+      <p class="iw-warn" data-warn="" hidden=""></p>
+      <p class="iw-guide iw-guide--pc">
+        아래 견적서가 바로 채워집니다. PDF로 받으시려면 키보드
+        <b>Command + P</b> (윈도우는 <b>Ctrl + P</b>) 를 누르고 <b>PDF로 저장</b>을 고르세요.
+      </p>
+      <p class="iw-guide iw-guide--mo">
+        아래에 견적서가 바로 채워집니다. 휴대폰에서 PDF로 남기려면
+        아이폰은 <b>공유 → 프린트</b>, 안드로이드 크롬은 <b>오른쪽 위 메뉴 → 공유 → 인쇄</b>에서
+        <b>PDF로 저장</b>을 고르세요.
+      </p>
+      <a class="iw-link" href="/" data-form-link="" hidden="">사진까지 올리고 노션에 등록하려면 → 웹 폼 열기</a>
+    </section>
+
+    <div class="iw-viewtabs" role="group" aria-label="보기 방식">
+      <button class="iw-tab" type="button" aria-pressed="false" data-view-summary="">요약 보기</button>
+      <button class="iw-tab" type="button" aria-pressed="true" data-view-sheet="">견적서 양식</button>
+    </div>
+
+    <div class="iw-cards" data-cards="">
+      <div class="iw-card iw-card--sum">
+        <span class="iw-card__label">합 계 금 액 (부가세별도)</span>
+        <b class="iw-card__won" data-card-won="">6,010,000원</b>
+        <span class="iw-card__hangul" data-card-hangul="">일금 육백일만원정</span>
+      </div>
+      <ul class="iw-list" data-card-rows=""><li class="iw-listitem"><span class="iw-listitem__name">바탕면작업</span><span class="iw-listitem__calc">51 × 20,000원</span><b class="iw-listitem__amount">1,020,000원</b></li><li class="iw-listitem"><span class="iw-listitem__name">고압세척</span><span class="iw-listitem__calc">51 × 15,000원</span><b class="iw-listitem__amount">765,000원</b></li><li class="iw-listitem"><span class="iw-listitem__name">크랙보수</span><span class="iw-listitem__calc">51 × 10,000원</span><b class="iw-listitem__amount">510,000원</b></li><li class="iw-listitem"><span class="iw-listitem__name">하도 방수코트</span><span class="iw-listitem__calc">51 × 15,000원</span><b class="iw-listitem__amount">765,000원</b></li><li class="iw-listitem"><span class="iw-listitem__name">중도 방수코트</span><span class="iw-listitem__calc">51 × 30,000원</span><b class="iw-listitem__amount">1,530,000원</b></li><li class="iw-listitem"><span class="iw-listitem__name">상도 방수코트</span><span class="iw-listitem__calc">51 × 20,000원</span><b class="iw-listitem__amount">1,020,000원</b></li><li class="iw-listitem"><span class="iw-listitem__name">폐기물처리</span><span class="iw-listitem__calc">1 × 200,000원</span><b class="iw-listitem__amount">200,000원</b></li><li class="iw-listitem"><span class="iw-listitem__name">보양•청소</span><span class="iw-listitem__calc">1 × 200,000원</span><b class="iw-listitem__amount">200,000원</b></li><li class="iw-listitem iw-listitem--total"><span class="iw-listitem__name">합계</span><span class="iw-listitem__calc">부가세 별도</span><b class="iw-listitem__amount">6,010,000원</b></li></ul>
+      <div class="iw-card">
+        <span class="iw-card__label">공사 · 공급자</span>
+        <div class="iw-kv"><span>고객</span><b data-card-customer="">카카오프렌즈 지곡점</b></div>
+        <div class="iw-kv"><span>견적일</span><b data-card-date="">2026 년 8 월 11일</b></div>
+        <div class="iw-kv"><span>공사명</span><b data-card-project="">옥상 바닥 방수</b></div>
+        <div class="iw-kv"><span>상호</span><b data-card-company="">청명옥상방수</b></div>
+        <div class="iw-kv"><span>등록번호</span><b data-card-biz="">254-11-02805</b></div>
+        <div class="iw-kv"><span>대표자</span><b>윤병동</b></div>
+        <div class="iw-kv"><span>담당</span><b data-card-owner="">송경훈</b></div>
+        <div class="iw-kv"><span>연락처</span><b data-card-phone="">010-4156-4043</b></div>
+        <div class="iw-kv"><span>결제방법</span><b>착수금 50% · 잔금 50%</b></div>
+      </div>
+      <div class="iw-card">
+        <span class="iw-card__label">특 이 사 항</span>
+        <div class="iw-cardnote" data-card-notes=""><span>* 공사명: 옥상 방수 공사</span><span>* 공사일자: 협의(1-2일 소요)</span><span>* 작업방법: 바탕면 정리 → 고압세척 → 프라이머 → 크랙보수 → 하도 작업 → 중도 작업 → 상도작업 → 검수</span><span>* 보증기간: 작업구간에 한하여 2년 보증. (다른 부분에 의한 누수는 제외)</span></div>
+      </div>
+    </div>
+
+    <p class="iw-swipe">종이 양식 그대로입니다. 글씨가 작으면 <b>요약 보기</b>로 확인하세요.</p>
+
+    <div class="iw-sheetwrap iw-fit50" data-sheet-wrap="">
+      <div class="iw-sheet" data-sheet="">
+        <h1 class="iw-sheet__title">견 적 서</h1>
+        <div class="iw-sheet__rule"></div>
+
+        <table class="iw-top">
+          <tbody>
+            <tr>
+              <td class="iw-greet" rowspan="5">
+                <span class="iw-greet__line" data-sheet-date="">2026 년 8 월 11일</span>
+                <span class="iw-greet__line" data-sheet-customer="">카카오프렌즈 지곡점 귀중</span>
+                <span class="iw-greet__line">아래와 같이 견적합니다.</span>
+              </td>
+              <td class="iw-vlabel" rowspan="5"><span>공</span><span>급</span><span>자</span></td>
+              <th class="iw-th" scope="row">등록번호</th>
+              <td class="iw-td" colspan="3" data-sheet-biz="">254-11-02805</td>
+            </tr>
+            <tr>
+              <th class="iw-th" scope="row">상 호 명</th>
+              <td class="iw-td" data-sheet-company="">청명옥상방수</td>
+              <th class="iw-th" scope="row">대 표 자</th>
+              <td class="iw-td iw-td--seal">
+                <span>윤병동</span>
+                <img class="iw-seal" src="seal.png" alt="대표자 도장">
+              </td>
+            </tr>
+            <tr>
+              <th class="iw-th" scope="row">주 소</th>
+              <td class="iw-td iw-td--addr" colspan="3" data-sheet-addr="">경기 용인시 기흥구 동백죽전대로 205 B202호 D065</td>
+            </tr>
+            <tr>
+              <th class="iw-th" scope="row">업 태</th>
+              <td class="iw-td">건설업</td>
+              <th class="iw-th" scope="row">종 목</th>
+              <td class="iw-td" data-sheet-category="">방수미장 공사업</td>
+            </tr>
+            <tr>
+              <th class="iw-th" scope="row">전화번호</th>
+              <td class="iw-td">010-5117-8877</td>
+              <th class="iw-th" scope="row">팩 스</th>
+              <td class="iw-td">0504-068-5074</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="iw-main">
+          <colgroup>
+            <col class="iw-col1"><col class="iw-col2"><col class="iw-col3">
+            <col class="iw-col4"><col class="iw-col5"><col class="iw-col6">
+          </colgroup>
+          <tbody>
+            <tr class="iw-sum">
+              <th class="iw-th iw-th--sum" scope="row">합 계 금 액<br><small>(부가세별도)</small></th>
+              <td class="iw-td iw-td--sum" colspan="5" data-sheet-hangul="">일금 육백일만원정 ₩6,010,000</td>
+            </tr>
+            <tr class="iw-head">
+              <th class="iw-th" scope="col">공사명</th>
+              <th class="iw-th" scope="col">품목</th>
+              <th class="iw-th" scope="col">수량</th>
+              <th class="iw-th" scope="col">단가</th>
+              <th class="iw-th" scope="col">금액</th>
+              <th class="iw-th" scope="col">비고</th>
+            </tr>
+          </tbody>
+          <tbody data-sheet-rows=""><tr class="iw-item"><td class="iw-project" rowspan="8"><span>옥상</span><span>바닥 방수</span></td><td class="iw-td iw-name">바탕면작업</td><td class="iw-td">51</td><td class="iw-td iw-td--num">20,000</td><td class="iw-td iw-td--num">1,020,000</td><td class="iw-td"></td></tr><tr class="iw-item"><td class="iw-td iw-name">고압세척</td><td class="iw-td">51</td><td class="iw-td iw-td--num">15,000</td><td class="iw-td iw-td--num">765,000</td><td class="iw-td"></td></tr><tr class="iw-item"><td class="iw-td iw-name">크랙보수</td><td class="iw-td">51</td><td class="iw-td iw-td--num">10,000</td><td class="iw-td iw-td--num">510,000</td><td class="iw-td"></td></tr><tr class="iw-item"><td class="iw-td iw-name">하도 방수코트</td><td class="iw-td">51</td><td class="iw-td iw-td--num">15,000</td><td class="iw-td iw-td--num">765,000</td><td class="iw-td"></td></tr><tr class="iw-item"><td class="iw-td iw-name">중도 방수코트</td><td class="iw-td">51</td><td class="iw-td iw-td--num">30,000</td><td class="iw-td iw-td--num">1,530,000</td><td class="iw-td"></td></tr><tr class="iw-item"><td class="iw-td iw-name">상도 방수코트</td><td class="iw-td">51</td><td class="iw-td iw-td--num">20,000</td><td class="iw-td iw-td--num">1,020,000</td><td class="iw-td"></td></tr><tr class="iw-item"><td class="iw-td iw-name">폐기물처리</td><td class="iw-td">1</td><td class="iw-td iw-td--num">200,000</td><td class="iw-td iw-td--num">200,000</td><td class="iw-td"></td></tr><tr class="iw-item"><td class="iw-td iw-name">보양•청소</td><td class="iw-td">1</td><td class="iw-td iw-td--num">200,000</td><td class="iw-td iw-td--num">200,000</td><td class="iw-td"></td></tr><tr class="iw-blank"><td class="iw-td"></td><td class="iw-td"></td><td class="iw-td"></td><td class="iw-td"></td><td class="iw-td"></td></tr></tbody>
+          <tbody>
+            <tr class="iw-total">
+              <th class="iw-th iw-th--plain" scope="row">합계</th>
+              <td class="iw-td" colspan="3"></td>
+              <td class="iw-td iw-td--num" data-sheet-subtotal="">6,010,000</td>
+              <td class="iw-td"></td>
+            </tr>
+            <tr class="iw-final">
+              <th class="iw-th iw-th--plain" scope="row">최종 네고 금액</th>
+              <td class="iw-td" colspan="3"></td>
+              <td class="iw-td iw-td--num" data-sheet-final="">6,010,000</td>
+              <td class="iw-td"></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="iw-note">
+          <tbody>
+            <tr><th class="iw-th iw-th--note" scope="col">특 이 사 항</th></tr>
+            <tr><td class="iw-note__body" data-sheet-notes=""><span>* 공사명: 옥상 방수 공사</span><span>* 공사일자: 협의(1-2일 소요)</span><span>* 작업방법: 바탕면 정리 → 고압세척 → 프라이머 → 크랙보수 → 하도 작업 → 중도 작업 → 상도작업 → 검수</span><span>* 보증기간: 작업구간에 한하여 2년 보증. (다른 부분에 의한 누수는 제외)</span></td></tr>
+          </tbody>
+        </table>
+
+        <table class="iw-foot">
+          <tbody>
+            <tr>
+              <th class="iw-th" scope="row">담당</th>
+              <td class="iw-td" data-sheet-owner="">송경훈</td>
+              <th class="iw-th" scope="row">연 락 처</th>
+              <td class="iw-td" data-sheet-phone="">010-4156-4043</td>
+              <th class="iw-th" scope="row">결제방법</th>
+              <td class="iw-td">착수금50%,잔금50%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section></div>
+</body></html>

@@ -15,7 +15,7 @@
 {{!-- @name text-wall-clean @type textfield @default 200000 @label "외벽방수 · 보양청소 (1식)" --}}
 {{!-- @name text-wall-etc @type textfield @default 200000 @label "외벽방수 · 잡자재비용 (1식)" --}}
 
-<section class="iw-quote" data-state="locked" data-quote-root
+<section class="iw-quote" data-state="locked" data-view="summary" data-quote-root
   data-pin="{{text-pin}}"
   data-form-url="{{text-form-url}}"
   data-roof-base="{{text-roof-base}}"
@@ -36,7 +36,7 @@
     <h2 class="iw-gate__title">견적서 만들기</h2>
     <p class="iw-gate__desc">직원용입니다. 접속 번호를 넣어 주세요.</p>
     <div class="iw-gate__row">
-      <input class="iw-input" type="password" inputmode="numeric" aria-label="접속 번호" data-pin-input>
+      <input class="iw-input" type="password" inputmode="numeric" autocomplete="off" aria-label="접속 번호" data-pin-input>
       <button class="iw-btn" type="button" data-pin-submit>들어가기</button>
     </div>
     <p class="iw-gate__error" data-pin-error hidden>번호가 맞지 않습니다.</p>
@@ -75,112 +75,151 @@
         <input class="iw-input" id="iw-date" type="date" data-date>
       </div>
       <p class="iw-warn" data-warn hidden></p>
-      <p class="iw-guide">
+      <p class="iw-guide iw-guide--pc">
         아래 견적서가 바로 채워집니다. PDF로 받으시려면 키보드
         <b>Command + P</b> (윈도우는 <b>Ctrl + P</b>) 를 누르고 <b>PDF로 저장</b>을 고르세요.
+      </p>
+      <p class="iw-guide iw-guide--mo">
+        아래에 견적서가 바로 채워집니다. 휴대폰에서 PDF로 남기려면
+        아이폰은 <b>공유 → 프린트</b>, 안드로이드 크롬은 <b>오른쪽 위 메뉴 → 공유 → 인쇄</b>에서
+        <b>PDF로 저장</b>을 고르세요.
       </p>
       <a class="iw-link" href="/" data-form-link hidden>사진까지 올리고 노션에 등록하려면 → 웹 폼 열기</a>
     </section>
 
-    <div class="iw-sheet" data-sheet>
-      <h1 class="iw-sheet__title">견 적 서</h1>
-      <div class="iw-sheet__rule"></div>
+    <div class="iw-viewtabs" role="group" aria-label="보기 방식">
+      <button class="iw-tab" type="button" aria-pressed="true" data-view-summary>요약 보기</button>
+      <button class="iw-tab" type="button" aria-pressed="false" data-view-sheet>견적서 양식</button>
+    </div>
 
-      <table class="iw-top">
-        <tbody>
-          <tr>
-            <td class="iw-greet" rowspan="5">
-              <span class="iw-greet__line" data-sheet-date></span>
-              <span class="iw-greet__line" data-sheet-customer></span>
-              <span class="iw-greet__line">아래와 같이 견적합니다.</span>
-            </td>
-            <td class="iw-vlabel" rowspan="5"><span>공</span><span>급</span><span>자</span></td>
-            <th class="iw-th" scope="row">등록번호</th>
-            <td class="iw-td" colspan="3" data-sheet-biz></td>
-          </tr>
-          <tr>
-            <th class="iw-th" scope="row">상 호 명</th>
-            <td class="iw-td" data-sheet-company></td>
-            <th class="iw-th" scope="row">대 표 자</th>
-            <td class="iw-td iw-td--seal">
-              <span>윤병동</span>
-              <img class="iw-seal" src="{{image-seal}}" alt="대표자 도장">
-            </td>
-          </tr>
-          <tr>
-            <th class="iw-th" scope="row">주 소</th>
-            <td class="iw-td iw-td--addr" colspan="3" data-sheet-addr></td>
-          </tr>
-          <tr>
-            <th class="iw-th" scope="row">업 태</th>
-            <td class="iw-td">건설업</td>
-            <th class="iw-th" scope="row">종 목</th>
-            <td class="iw-td" data-sheet-category></td>
-          </tr>
-          <tr>
-            <th class="iw-th" scope="row">전화번호</th>
-            <td class="iw-td">010-5117-8877</td>
-            <th class="iw-th" scope="row">팩 스</th>
-            <td class="iw-td">0504-068-5074</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="iw-cards" data-cards>
+      <div class="iw-card iw-card--sum">
+        <span class="iw-card__label">합 계 금 액 (부가세별도)</span>
+        <b class="iw-card__won" data-card-won>-</b>
+        <span class="iw-card__hangul" data-card-hangul></span>
+      </div>
+      <ul class="iw-list" data-card-rows></ul>
+      <div class="iw-card">
+        <span class="iw-card__label">공사 · 공급자</span>
+        <div class="iw-kv"><span>고객</span><b data-card-customer></b></div>
+        <div class="iw-kv"><span>견적일</span><b data-card-date></b></div>
+        <div class="iw-kv"><span>공사명</span><b data-card-project></b></div>
+        <div class="iw-kv"><span>상호</span><b data-card-company></b></div>
+        <div class="iw-kv"><span>등록번호</span><b data-card-biz></b></div>
+        <div class="iw-kv"><span>대표자</span><b>윤병동</b></div>
+        <div class="iw-kv"><span>담당</span><b data-card-owner></b></div>
+        <div class="iw-kv"><span>연락처</span><b data-card-phone></b></div>
+        <div class="iw-kv"><span>결제방법</span><b>착수금 50% · 잔금 50%</b></div>
+      </div>
+      <div class="iw-card">
+        <span class="iw-card__label">특 이 사 항</span>
+        <div class="iw-cardnote" data-card-notes></div>
+      </div>
+    </div>
 
-      <table class="iw-main">
-        <colgroup>
-          <col class="iw-col1"><col class="iw-col2"><col class="iw-col3">
-          <col class="iw-col4"><col class="iw-col5"><col class="iw-col6">
-        </colgroup>
-        <tbody>
-          <tr class="iw-sum">
-            <th class="iw-th iw-th--sum" scope="row">합 계 금 액<br><small>(부가세별도)</small></th>
-            <td class="iw-td iw-td--sum" colspan="5" data-sheet-hangul></td>
-          </tr>
-          <tr class="iw-head">
-            <th class="iw-th" scope="col">공사명</th>
-            <th class="iw-th" scope="col">품목</th>
-            <th class="iw-th" scope="col">수량</th>
-            <th class="iw-th" scope="col">단가</th>
-            <th class="iw-th" scope="col">금액</th>
-            <th class="iw-th" scope="col">비고</th>
-          </tr>
-        </tbody>
-        <tbody data-sheet-rows></tbody>
-        <tbody>
-          <tr class="iw-total">
-            <th class="iw-th iw-th--plain" scope="row">합계</th>
-            <td class="iw-td" colspan="3"></td>
-            <td class="iw-td iw-td--num" data-sheet-subtotal></td>
-            <td class="iw-td"></td>
-          </tr>
-          <tr class="iw-final">
-            <th class="iw-th iw-th--plain" scope="row">최종 네고 금액</th>
-            <td class="iw-td" colspan="3"></td>
-            <td class="iw-td iw-td--num" data-sheet-final></td>
-            <td class="iw-td"></td>
-          </tr>
-        </tbody>
-      </table>
+    <p class="iw-swipe">종이 양식 그대로입니다. 글씨가 작으면 <b>요약 보기</b>로 확인하세요.</p>
 
-      <table class="iw-note">
-        <tbody>
-          <tr><th class="iw-th iw-th--note" scope="col">특 이 사 항</th></tr>
-          <tr><td class="iw-note__body" data-sheet-notes></td></tr>
-        </tbody>
-      </table>
+    <div class="iw-sheetwrap" data-sheet-wrap>
+      <div class="iw-sheet" data-sheet>
+        <h1 class="iw-sheet__title">견 적 서</h1>
+        <div class="iw-sheet__rule"></div>
 
-      <table class="iw-foot">
-        <tbody>
-          <tr>
-            <th class="iw-th" scope="row">담당</th>
-            <td class="iw-td" data-sheet-owner></td>
-            <th class="iw-th" scope="row">연 락 처</th>
-            <td class="iw-td" data-sheet-phone></td>
-            <th class="iw-th" scope="row">결제방법</th>
-            <td class="iw-td">착수금50%,잔금50%</td>
-          </tr>
-        </tbody>
-      </table>
+        <table class="iw-top">
+          <tbody>
+            <tr>
+              <td class="iw-greet" rowspan="5">
+                <span class="iw-greet__line" data-sheet-date></span>
+                <span class="iw-greet__line" data-sheet-customer></span>
+                <span class="iw-greet__line">아래와 같이 견적합니다.</span>
+              </td>
+              <td class="iw-vlabel" rowspan="5"><span>공</span><span>급</span><span>자</span></td>
+              <th class="iw-th" scope="row">등록번호</th>
+              <td class="iw-td" colspan="3" data-sheet-biz></td>
+            </tr>
+            <tr>
+              <th class="iw-th" scope="row">상 호 명</th>
+              <td class="iw-td" data-sheet-company></td>
+              <th class="iw-th" scope="row">대 표 자</th>
+              <td class="iw-td iw-td--seal">
+                <span>윤병동</span>
+                <img class="iw-seal" src="{{image-seal}}" alt="대표자 도장">
+              </td>
+            </tr>
+            <tr>
+              <th class="iw-th" scope="row">주 소</th>
+              <td class="iw-td iw-td--addr" colspan="3" data-sheet-addr></td>
+            </tr>
+            <tr>
+              <th class="iw-th" scope="row">업 태</th>
+              <td class="iw-td">건설업</td>
+              <th class="iw-th" scope="row">종 목</th>
+              <td class="iw-td" data-sheet-category></td>
+            </tr>
+            <tr>
+              <th class="iw-th" scope="row">전화번호</th>
+              <td class="iw-td">010-5117-8877</td>
+              <th class="iw-th" scope="row">팩 스</th>
+              <td class="iw-td">0504-068-5074</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="iw-main">
+          <colgroup>
+            <col class="iw-col1"><col class="iw-col2"><col class="iw-col3">
+            <col class="iw-col4"><col class="iw-col5"><col class="iw-col6">
+          </colgroup>
+          <tbody>
+            <tr class="iw-sum">
+              <th class="iw-th iw-th--sum" scope="row">합 계 금 액<br><small>(부가세별도)</small></th>
+              <td class="iw-td iw-td--sum" colspan="5" data-sheet-hangul></td>
+            </tr>
+            <tr class="iw-head">
+              <th class="iw-th" scope="col">공사명</th>
+              <th class="iw-th" scope="col">품목</th>
+              <th class="iw-th" scope="col">수량</th>
+              <th class="iw-th" scope="col">단가</th>
+              <th class="iw-th" scope="col">금액</th>
+              <th class="iw-th" scope="col">비고</th>
+            </tr>
+          </tbody>
+          <tbody data-sheet-rows></tbody>
+          <tbody>
+            <tr class="iw-total">
+              <th class="iw-th iw-th--plain" scope="row">합계</th>
+              <td class="iw-td" colspan="3"></td>
+              <td class="iw-td iw-td--num" data-sheet-subtotal></td>
+              <td class="iw-td"></td>
+            </tr>
+            <tr class="iw-final">
+              <th class="iw-th iw-th--plain" scope="row">최종 네고 금액</th>
+              <td class="iw-td" colspan="3"></td>
+              <td class="iw-td iw-td--num" data-sheet-final></td>
+              <td class="iw-td"></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="iw-note">
+          <tbody>
+            <tr><th class="iw-th iw-th--note" scope="col">특 이 사 항</th></tr>
+            <tr><td class="iw-note__body" data-sheet-notes></td></tr>
+          </tbody>
+        </table>
+
+        <table class="iw-foot">
+          <tbody>
+            <tr>
+              <th class="iw-th" scope="row">담당</th>
+              <td class="iw-td" data-sheet-owner></td>
+              <th class="iw-th" scope="row">연 락 처</th>
+              <td class="iw-td" data-sheet-phone></td>
+              <th class="iw-th" scope="row">결제방법</th>
+              <td class="iw-td">착수금50%,잔금50%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </section>
