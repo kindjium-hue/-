@@ -36,13 +36,7 @@
   gap: 10px;
   margin-bottom: 14px;
 }
-.cv-app .cv-left { display: flex; align-items: center; gap: 8px; }
-.cv-app .cv-period {
-  margin-right: 6px;
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
+.cv-app .cv-day__title { margin: 0; font-size: 18px; font-weight: 600; }
 .cv-app .cv-round {
   width: 40px;
   height: 34px;
@@ -94,92 +88,8 @@
   line-height: 1.7;
 }
 
-/* -------------------------------------------------------------- 달력 격자 */
-
-.cv-app .cv-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  border-top: 1px solid var(--line);
-  border-left: 1px solid var(--line);
-}
-.cv-app .cv-head {
-  padding: 9px 6px;
-  font-size: 13px;
-  color: var(--muted);
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-.cv-app .cv-head--sun { color: #d0342c; }
-.cv-app .cv-head--sat { color: #2f6df6; }
-.cv-app .cv-cell {
-  display: block;
-  width: 100%;
-  min-height: 100px;
-  padding: 8px 7px;
-  font-family: inherit;
-  text-align: left;
-  vertical-align: top;
-  background: #ffffff;
-  border: 0;
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  cursor: pointer;
-}
-.cv-app .cv-cell--pad { background: var(--soft); }
-.cv-app .cv-cell--today { background: var(--today); }
-.cv-app .cv-cell--on { box-shadow: inset 0 0 0 2px var(--accent); }
-.cv-app .cv-num {
-  display: block;
-  margin-bottom: 5px;
-  font-size: 14px;
-  color: var(--ink);
-}
-.cv-app .cv-cell--pad .cv-num { color: #c2c2c2; }
-.cv-app .cv-num--sun { color: #d0342c; }
-.cv-app .cv-num--sat { color: #2f6df6; }
-.cv-app .cv-cell--today .cv-num {
-  display: inline-block;
-  min-width: 22px;
-  margin-bottom: 5px;
-  padding: 1px 0;
-  color: #ffffff;
-  text-align: center;
-  background: var(--on);
-  border-radius: 999px;
-}
-
-.cv-app .cv-chip {
-  display: block;
-  margin-bottom: 3px;
-  padding: 2px 6px;
-  overflow: hidden;
-  font-size: 12px;
-  line-height: 1.5;
-  color: #ffffff;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  background: var(--c9);
-  border-radius: 3px;
-}
-.cv-app .cv-chip--c0 { background: var(--c0); }
-.cv-app .cv-chip--c1 { background: var(--c1); }
-.cv-app .cv-chip--c2 { background: var(--c2); }
-.cv-app .cv-chip--c3 { background: var(--c3); }
-.cv-app .cv-chip--c4 { background: var(--c4); }
-.cv-app .cv-chip--c5 { background: var(--c5); }
-.cv-app .cv-more { font-size: 11px; color: var(--muted); }
-
-/* 주간·일간 */
-
-.cv-app .cv-grid--week .cv-cell { min-height: 190px; }
-.cv-app .cv-grid--day { grid-template-columns: 1fr; }
-.cv-app .cv-grid--day .cv-cell { min-height: 220px; }
-.cv-app .cv-grid--day .cv-head { text-align: center; }
-
 /* ----------------------------------------------------------- 그날 일정 */
 
-.cv-app .cv-day { margin-top: 18px; }
-.cv-app .cv-day__title { margin: 0 0 10px; font-size: 16px; font-weight: 600; }
 .cv-app .cv-day__list { display: flex; flex-direction: column; gap: 8px; }
 .cv-app .cv-item {
   display: flex;
@@ -321,4 +231,101 @@
   .cv-app .cv-open,
   .cv-app .cv-note { display: none; }
   .cv-app .cv-cell { min-height: 110px; }
+}
+
+/* ------------------- 아임웹 상세 창에 끼워 넣는 «청명 작업현황» 폼 (.cvx-) */
+/* 우리 위젯 밖(아임웹 모달 안)에 들어가므로 조상 선택자를 두지 않는다. */
+
+.cvx-panel {
+  box-sizing: border-box;
+  margin: 14px;
+  padding: 14px;
+  color: #1a1a1a;
+  background: #f8fafc;
+  border: 1px solid #d9e0e8;
+  border-radius: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+               "Malgun Gothic", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+.cvx-panel .cvx-head { display: block; margin-bottom: 10px; font-size: 15px; font-weight: 700; }
+.cvx-panel .cvx-field { margin-bottom: 10px; }
+.cvx-panel .cvx-field > span {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #67707d;
+}
+.cvx-panel .cvx-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.cvx-panel .cvx-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 9px 10px;
+  font-family: inherit;
+  font-size: 15px;
+  color: #1a1a1a;
+  background: #ffffff;
+  border: 1px solid #d9e0e8;
+  border-radius: 5px;
+  appearance: auto;
+}
+.cvx-panel .cvx-area { line-height: 1.6; resize: vertical; }
+.cvx-panel .cvx-checks { display: flex; flex-wrap: wrap; gap: 6px; }
+.cvx-panel .cvx-check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 9px;
+  font-size: 13px;
+  background: #ffffff;
+  border: 1px solid #d9e0e8;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.cvx-panel .cvx-check input { width: 16px; height: 16px; accent-color: #2f6df6; }
+.cvx-panel .cvx-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.cvx-panel .cvx-btn {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-height: 40px;
+  padding: 9px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  background: #ffffff;
+  border: 1px solid #d9e0e8;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.cvx-panel .cvx-btn--main { color: #ffffff; background: #2f6df6; border-color: #2f6df6; }
+.cvx-panel .cvx-said { margin: 10px 0 0; font-size: 12px; line-height: 1.6; color: #67707d; }
+
+/* 그날 목록의 «새 일정» 버튼 */
+.cv-app .cv-add {
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  text-align: left;
+  background: #ffffff;
+  border: 1px dashed #c9d0d8;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* 받은 자료 확인 */
+
+.cv-app .cv-raw { margin-top: 12px; }
+.cv-app .cv-raw__head { font-size: 13px; color: var(--muted); cursor: pointer; }
+.cv-app .cv-raw__body { margin-top: 8px; }
+.cv-app .cv-raw__line {
+  padding: 2px 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink);
+  overflow-wrap: anywhere;
 }

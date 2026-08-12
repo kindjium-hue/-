@@ -1,40 +1,28 @@
 {{!-- @name text-works @type textfield @default "누수탐지,누수피해복구,하수구,옥상방수,외벽방수,도배,기타" @label "작업항목 (제목에서 찾아 표시합니다)" --}}
-{{!-- @name text-calendar @type textfield @default "" @label "아임웹 캘린더 페이지 주소 (비우면 이 페이지)" @placeholder "/37" --}}
+{{!-- @name text-owners @type textfield @default "윤병동,송경훈,원정연" @label "담당자 (쉼표로 구분)" --}}
+{{!-- @name text-states @type textfield @default "예정,진행중,완료,보류" @label "진행상태 (쉼표로 구분)" --}}
 {{!-- @name text-board-code @type textfield @default "" @label "board_code (비우면 스스로 찾습니다)" --}}
 
-<section class="cv-app" data-view="month" data-calview-root
+<section class="cv-app" data-calview-root
   data-works="{{text-works}}"
-  data-calendar="{{text-calendar}}"
+  data-owners="{{text-owners}}"
+  data-states="{{text-states}}"
   data-board-code="{{text-board-code}}">
 
   <div class="cv-bar">
-    <div class="cv-left">
-      <strong class="cv-period" data-period>불러오는 중…</strong>
-      <button class="cv-round" type="button" aria-label="이전" data-prev>‹</button>
-      <button class="cv-round" type="button" aria-label="다음" data-next>›</button>
-      <button class="cv-ghost" type="button" data-today>오늘</button>
-    </div>
-    <div class="cv-tabs" role="group" aria-label="보기 방식">
-      <button class="cv-tab" type="button" aria-pressed="false" data-view-day>일</button>
-      <button class="cv-tab" type="button" aria-pressed="false" data-view-week>주</button>
-      <button class="cv-tab" type="button" aria-pressed="true" data-view-month>월</button>
-    </div>
+    <h3 class="cv-day__title" data-day-title>일정을 받아오고 있습니다…</h3>
+    <button class="cv-ghost" type="button" data-reload>새로 고침</button>
   </div>
 
-  <p class="cv-status" data-status role="status">아임웹 캘린더에서 일정을 받아오고 있습니다…</p>
+  <div class="cv-day__list" data-day-list></div>
 
-  <div class="cv-cal" data-cal></div>
-
-  <section class="cv-day">
-    <h3 class="cv-day__title" data-day-title>날짜를 누르면 그날 일정이 보입니다</h3>
-    <div class="cv-day__list" data-day-list></div>
-  </section>
+  <p class="cv-status" data-status role="status" hidden></p>
 
   <details class="cv-sheet">
     <summary class="cv-sheet__head">기간별로 정리해 보기</summary>
 
     <div class="cv-tools">
-      <div class="cv-tabs cv-tabs--range" role="group" aria-label="정리 기간">
+      <div class="cv-tabs" role="group" aria-label="정리 기간">
         <button class="cv-tab" type="button" aria-pressed="true" data-span-month>이번 달</button>
         <button class="cv-tab" type="button" aria-pressed="false" data-span-quarter>3개월</button>
         <button class="cv-tab" type="button" aria-pressed="false" data-span-year>올해</button>
@@ -59,11 +47,10 @@
         <tbody data-rows></tbody>
       </table>
     </div>
-  </details>
 
-  <p class="cv-note">
-    아임웹 캘린더가 쓰는 일정 자료를 그대로 읽어 보여 줍니다. 캘린더와 <b>같은 페이지</b>에
-    두세요. 일정을 고치려면 <b>열기</b>를 눌러 아임웹 캘린더에서 수정하고, 돌아와
-    <b>새로 고침</b>을 누르면 반영됩니다.
-  </p>
+    <details class="cv-raw">
+      <summary class="cv-raw__head">받은 자료 확인 (날짜가 어긋나 보일 때)</summary>
+      <div class="cv-raw__body" data-raw></div>
+    </details>
+  </details>
 </section>

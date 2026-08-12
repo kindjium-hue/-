@@ -55,13 +55,7 @@
   gap: 10px;
   margin-bottom: 14px;
 }
-.cv-app .cv-left { display: flex; align-items: center; gap: 8px; }
-.cv-app .cv-period {
-  margin-right: 6px;
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
+.cv-app .cv-day__title { margin: 0; font-size: 18px; font-weight: 600; }
 .cv-app .cv-round {
   width: 40px;
   height: 34px;
@@ -113,92 +107,8 @@
   line-height: 1.7;
 }
 
-/* -------------------------------------------------------------- 달력 격자 */
-
-.cv-app .cv-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  border-top: 1px solid var(--line);
-  border-left: 1px solid var(--line);
-}
-.cv-app .cv-head {
-  padding: 9px 6px;
-  font-size: 13px;
-  color: var(--muted);
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-.cv-app .cv-head--sun { color: #d0342c; }
-.cv-app .cv-head--sat { color: #2f6df6; }
-.cv-app .cv-cell {
-  display: block;
-  width: 100%;
-  min-height: 100px;
-  padding: 8px 7px;
-  font-family: inherit;
-  text-align: left;
-  vertical-align: top;
-  background: #ffffff;
-  border: 0;
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  cursor: pointer;
-}
-.cv-app .cv-cell--pad { background: var(--soft); }
-.cv-app .cv-cell--today { background: var(--today); }
-.cv-app .cv-cell--on { box-shadow: inset 0 0 0 2px var(--accent); }
-.cv-app .cv-num {
-  display: block;
-  margin-bottom: 5px;
-  font-size: 14px;
-  color: var(--ink);
-}
-.cv-app .cv-cell--pad .cv-num { color: #c2c2c2; }
-.cv-app .cv-num--sun { color: #d0342c; }
-.cv-app .cv-num--sat { color: #2f6df6; }
-.cv-app .cv-cell--today .cv-num {
-  display: inline-block;
-  min-width: 22px;
-  margin-bottom: 5px;
-  padding: 1px 0;
-  color: #ffffff;
-  text-align: center;
-  background: var(--on);
-  border-radius: 999px;
-}
-
-.cv-app .cv-chip {
-  display: block;
-  margin-bottom: 3px;
-  padding: 2px 6px;
-  overflow: hidden;
-  font-size: 12px;
-  line-height: 1.5;
-  color: #ffffff;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  background: var(--c9);
-  border-radius: 3px;
-}
-.cv-app .cv-chip--c0 { background: var(--c0); }
-.cv-app .cv-chip--c1 { background: var(--c1); }
-.cv-app .cv-chip--c2 { background: var(--c2); }
-.cv-app .cv-chip--c3 { background: var(--c3); }
-.cv-app .cv-chip--c4 { background: var(--c4); }
-.cv-app .cv-chip--c5 { background: var(--c5); }
-.cv-app .cv-more { font-size: 11px; color: var(--muted); }
-
-/* 주간·일간 */
-
-.cv-app .cv-grid--week .cv-cell { min-height: 190px; }
-.cv-app .cv-grid--day { grid-template-columns: 1fr; }
-.cv-app .cv-grid--day .cv-cell { min-height: 220px; }
-.cv-app .cv-grid--day .cv-head { text-align: center; }
-
 /* ----------------------------------------------------------- 그날 일정 */
 
-.cv-app .cv-day { margin-top: 18px; }
-.cv-app .cv-day__title { margin: 0 0 10px; font-size: 16px; font-weight: 600; }
 .cv-app .cv-day__list { display: flex; flex-direction: column; gap: 8px; }
 .cv-app .cv-item {
   display: flex;
@@ -341,41 +251,125 @@
   .cv-app .cv-note { display: none; }
   .cv-app .cv-cell { min-height: 110px; }
 }
+
+/* ------------------- 아임웹 상세 창에 끼워 넣는 «청명 작업현황» 폼 (.cvx-) */
+/* 우리 위젯 밖(아임웹 모달 안)에 들어가므로 조상 선택자를 두지 않는다. */
+
+.cvx-panel {
+  box-sizing: border-box;
+  margin: 14px;
+  padding: 14px;
+  color: #1a1a1a;
+  background: #f8fafc;
+  border: 1px solid #d9e0e8;
+  border-radius: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+               "Malgun Gothic", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+.cvx-panel .cvx-head { display: block; margin-bottom: 10px; font-size: 15px; font-weight: 700; }
+.cvx-panel .cvx-field { margin-bottom: 10px; }
+.cvx-panel .cvx-field > span {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #67707d;
+}
+.cvx-panel .cvx-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.cvx-panel .cvx-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 9px 10px;
+  font-family: inherit;
+  font-size: 15px;
+  color: #1a1a1a;
+  background: #ffffff;
+  border: 1px solid #d9e0e8;
+  border-radius: 5px;
+  appearance: auto;
+}
+.cvx-panel .cvx-area { line-height: 1.6; resize: vertical; }
+.cvx-panel .cvx-checks { display: flex; flex-wrap: wrap; gap: 6px; }
+.cvx-panel .cvx-check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 9px;
+  font-size: 13px;
+  background: #ffffff;
+  border: 1px solid #d9e0e8;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.cvx-panel .cvx-check input { width: 16px; height: 16px; accent-color: #2f6df6; }
+.cvx-panel .cvx-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.cvx-panel .cvx-btn {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-height: 40px;
+  padding: 9px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  background: #ffffff;
+  border: 1px solid #d9e0e8;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.cvx-panel .cvx-btn--main { color: #ffffff; background: #2f6df6; border-color: #2f6df6; }
+.cvx-panel .cvx-said { margin: 10px 0 0; font-size: 12px; line-height: 1.6; color: #67707d; }
+
+/* 그날 목록의 «새 일정» 버튼 */
+.cv-app .cv-add {
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  text-align: left;
+  background: #ffffff;
+  border: 1px dashed #c9d0d8;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* 받은 자료 확인 */
+
+.cv-app .cv-raw { margin-top: 12px; }
+.cv-app .cv-raw__head { font-size: 13px; color: var(--muted); cursor: pointer; }
+.cv-app .cv-raw__body { margin-top: 8px; }
+.cv-app .cv-raw__line {
+  padding: 2px 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
 </style>
 
-<section class="cv-app" data-view="month" data-calview-root
+<section class="cv-app" data-calview-root
   data-works="누수탐지,누수피해복구,하수구,옥상방수,외벽방수,도배,기타"
-  data-calendar=""
+  data-owners="윤병동,송경훈,원정연"
+  data-states="예정,진행중,완료,보류"
   data-board-code="">
 
   <div class="cv-bar">
-    <div class="cv-left">
-      <strong class="cv-period" data-period>불러오는 중…</strong>
-      <button class="cv-round" type="button" aria-label="이전" data-prev>‹</button>
-      <button class="cv-round" type="button" aria-label="다음" data-next>›</button>
-      <button class="cv-ghost" type="button" data-today>오늘</button>
-    </div>
-    <div class="cv-tabs" role="group" aria-label="보기 방식">
-      <button class="cv-tab" type="button" aria-pressed="false" data-view-day>일</button>
-      <button class="cv-tab" type="button" aria-pressed="false" data-view-week>주</button>
-      <button class="cv-tab" type="button" aria-pressed="true" data-view-month>월</button>
-    </div>
+    <h3 class="cv-day__title" data-day-title>일정을 받아오고 있습니다…</h3>
+    <button class="cv-ghost" type="button" data-reload>새로 고침</button>
   </div>
 
-  <p class="cv-status" data-status role="status">아임웹 캘린더에서 일정을 받아오고 있습니다…</p>
+  <div class="cv-day__list" data-day-list></div>
 
-  <div class="cv-cal" data-cal></div>
-
-  <section class="cv-day">
-    <h3 class="cv-day__title" data-day-title>날짜를 누르면 그날 일정이 보입니다</h3>
-    <div class="cv-day__list" data-day-list></div>
-  </section>
+  <p class="cv-status" data-status role="status" hidden></p>
 
   <details class="cv-sheet">
     <summary class="cv-sheet__head">기간별로 정리해 보기</summary>
 
     <div class="cv-tools">
-      <div class="cv-tabs cv-tabs--range" role="group" aria-label="정리 기간">
+      <div class="cv-tabs" role="group" aria-label="정리 기간">
         <button class="cv-tab" type="button" aria-pressed="true" data-span-month>이번 달</button>
         <button class="cv-tab" type="button" aria-pressed="false" data-span-quarter>3개월</button>
         <button class="cv-tab" type="button" aria-pressed="false" data-span-year>올해</button>
@@ -400,47 +394,54 @@
         <tbody data-rows></tbody>
       </table>
     </div>
-  </details>
 
-  <p class="cv-note">
-    아임웹 캘린더가 쓰는 일정 자료를 그대로 읽어 보여 줍니다. 캘린더와 <b>같은 페이지</b>에
-    두세요. 일정을 고치려면 <b>열기</b>를 눌러 아임웹 캘린더에서 수정하고, 돌아와
-    <b>새로 고침</b>을 누르면 반영됩니다.
-  </p>
+    <details class="cv-raw">
+      <summary class="cv-raw__head">받은 자료 확인 (날짜가 어긋나 보일 때)</summary>
+      <div class="cv-raw__body" data-raw></div>
+    </details>
+  </details>
 </section>
 
 <script>
 {
-/* 청명 일정 달력 (아임웹 캘린더 형식) — 아임웹 기본 캘린더가 쓰는 자료를 그대로 읽어
-   같은 모양의 달력으로 보여 주고, 기간별 표로도 정리한다.
+/* 청명 일정 정리 — 위에 있는 아임웹 캘린더가 쓰는 일정 자료를 그대로 읽어,
+   «고른 날짜의 일정»을 카드로 보여 준다. 날짜는 아임웹 캘린더에서 누른 날짜를 따라간다.
+   아임웹 일정 상세 창이 열리면 그 안에 «청명 작업현황» 폼을 끼워 넣는다.
 
    자료 출처:  POST /ajax/calendar_data.cm   보냄 board_code, start, end
-               받음 [{ id, title, start, end, className }]
-   board_code 는 아임웹 캘린더가 스스로 보내는 요청에서 얻거나, 페이지 안에서 찾는다. */
+               받음 [{ id, title, start, end, className }]                       */
 
 const DATA_URL = "/ajax/calendar_data.cm";
 const DAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
+const CAL_TIME = "._calendar_time";
+const PREV_BTN = ".fc-prev-button, [class*=prev-button]";
+const NEXT_BTN = ".fc-next-button, [class*=next-button]";
+const TITLE_KEYS = ["subject", "title", "name"];
+const BODY_KEYS = ["content", "contents", "memo", "desc"];
+const CELL_CSS = "padding:7px 10px;border:1px solid #d8dee6";
+const HEAD_CSS = `width:92px;background:#f2f5f9;font-weight:700;${CELL_CSS}`;
 const MOBILE_MAX = 640;
 const NARROW_MAX = 400;
-const CELL_MAX = 4;
 
 const root = document.querySelector("[data-calview-root]");
 const pick = (name) => root.querySelector(`[data-${name}]`);
 const setting = (name) => String(root.getAttribute(`data-${name}`) || "").trim();
-
-const works = (() => {
-  const parts = setting("works").split(",");
+const listOf = (name) => {
+  const parts = setting(name).split(",");
   const out = [];
   for (let i = 0; i < parts.length; i += 1) {
     const one = parts[i].trim();
     if (one !== "") out.push(one);
   }
   return out;
-})();
+};
+
+const works = listOf("works");
+const owners = listOf("owners");
+const states = listOf("states");
 
 const store = {};
 let boardCode = setting("board-code");
-let cursor = new Date();
 let chosen = "";
 let span = "month";
 let loading = false;
@@ -457,7 +458,6 @@ const fromKey = (key) => {
   return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
 };
 const addDays = (date, n) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + n);
-const weekStart = (date) => addDays(date, -date.getDay());
 const longDate = (key) => {
   const d = fromKey(key);
   return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${DAY_NAMES[d.getDay()]})`;
@@ -466,11 +466,9 @@ const shortDate = (key) => {
   const d = fromKey(key);
   return `${d.getMonth() + 1}/${d.getDate()} (${DAY_NAMES[d.getDay()]})`;
 };
-
 const datePart = (text) => {
   const found = String(text || "").match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
-  if (!found) return "";
-  return `${found[1]}-${pad(Number(found[2]))}-${pad(Number(found[3]))}`;
+  return found ? `${found[1]}-${pad(Number(found[2]))}-${pad(Number(found[3]))}` : "";
 };
 const timePart = (text) => {
   const found = String(text || "").match(/(\d{1,2}):(\d{2})/);
@@ -497,7 +495,6 @@ const tagsIn = (title) => {
   return out;
 };
 
-/** 아임웹이 준 한 줄을 우리 형식으로 */
 const toItem = (row) => {
   const start = datePart(row.start);
   if (start === "") return null;
@@ -512,6 +509,7 @@ const toItem = (row) => {
     start: start,
     last: last,
     time: time,
+    raw: `${row.start || ""} ~ ${row.end || ""}`,
     color: colorClass(row.className),
     tags: tagsIn(row.title),
   };
@@ -561,24 +559,38 @@ const between = (from, to) => {
   return out;
 };
 
-/* ---------------------------------------------------------- 아임웹에 물어보기 */
+/* ------------------------------------------------------- 아임웹에 물어보기 */
 
 const say = (text, bad) => {
   const box = pick("status");
   box.textContent = text;
+  box.hidden = text === "";
   if (bad) box.setAttribute("data-bad", "yes");
   else box.removeAttribute("data-bad");
 };
 
 const findBoardCode = () => {
   if (boardCode !== "") return boardCode;
-  const html = document.documentElement.innerHTML;
-  const found = html.match(/board_code["'\s:=]{1,8}["']?([A-Za-z0-9_-]{8,40})/);
+  const found = document.documentElement.innerHTML
+    .match(/board_code["'\s:=]{1,8}["']?([A-Za-z0-9_-]{8,40})/);
   if (found) boardCode = found[1];
   return boardCode;
 };
 
-const ask = (from, to) => {
+const spanRange = () => {
+  const at = chosen !== "" ? fromKey(chosen) : new Date();
+  if (span === "year") {
+    return [keyOf(new Date(at.getFullYear(), 0, 1)), keyOf(new Date(at.getFullYear(), 11, 31))];
+  }
+  if (span === "quarter") {
+    return [keyOf(new Date(at.getFullYear(), at.getMonth() - 1, 1)),
+      keyOf(new Date(at.getFullYear(), at.getMonth() + 2, 0))];
+  }
+  return [keyOf(new Date(at.getFullYear(), at.getMonth(), 1)),
+    keyOf(new Date(at.getFullYear(), at.getMonth() + 1, 0))];
+};
+
+const ask = () => {
   const code = findBoardCode();
   if (code === "") {
     say("아임웹 캘린더를 찾지 못했습니다. 이 위젯을 캘린더와 같은 페이지에 두거나, "
@@ -587,9 +599,10 @@ const ask = (from, to) => {
   }
   if (loading) return;
   loading = true;
-  if (!ready) say("아임웹 캘린더에서 일정을 받아오고 있습니다…");
 
-  const body = `board_code=${encodeURIComponent(code)}&start=${from}&end=${to}`;
+  const bounds = spanRange();
+  const from = keyOf(addDays(fromKey(bounds[0]), -7));
+  const to = keyOf(addDays(fromKey(bounds[1]), 7));
   selfCall = true;
   const asking = fetch(DATA_URL, {
     method: "POST",
@@ -598,7 +611,7 @@ const ask = (from, to) => {
       "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
       "X-Requested-With": "XMLHttpRequest",
     },
-    body: body,
+    body: `board_code=${encodeURIComponent(code)}&start=${from}&end=${to}`,
   });
   selfCall = false;
   asking
@@ -610,17 +623,14 @@ const ask = (from, to) => {
       loading = false;
       ready = true;
       keep(asRows(data));
-      say(`아임웹 캘린더에서 일정 ${Object.keys(store).length}건을 읽었습니다.`);
+      say("");
       draw();
     })
     .catch((error) => {
       loading = false;
-      if (Object.keys(store).length > 0) {
-        say(`일정 ${Object.keys(store).length}건을 화면에서 읽었습니다. `
-          + `(직접 조회는 실패: ${error.message || error})`);
-      } else {
-        say(`일정을 받아오지 못했습니다 (${error.message || error}). 캘린더와 같은 페이지인지 `
-          + "확인해 주세요.", true);
+      if (Object.keys(store).length === 0) {
+        say(`일정을 받아오지 못했습니다 (${error.message || error}). `
+          + "아임웹 캘린더와 같은 페이지인지 확인해 주세요.", true);
       }
       draw();
     });
@@ -645,7 +655,7 @@ const listen = () => {
         if (!data) return;
         if (keep(asRows(data)) > 0 || !ready) {
           ready = true;
-          say(`아임웹 캘린더에서 일정 ${Object.keys(store).length}건을 읽었습니다.`);
+          say("");
           draw();
         }
       });
@@ -669,7 +679,7 @@ const listen = () => {
       response.clone().json().then((data) => {
         if (keep(asRows(data)) > 0) {
           ready = true;
-          say(`아임웹 캘린더에서 일정 ${Object.keys(store).length}건을 읽었습니다.`);
+          say("");
           draw();
         }
       }, () => {});
@@ -678,103 +688,391 @@ const listen = () => {
   };
 };
 
-/* ---------------------------------------------------------------- 그리기 */
+/* --------------------------------------- 아임웹 캘린더를 대신 눌러 주기 */
 
-const openUrl = (key) => {
-  const base = setting("calendar") !== "" ? setting("calendar") : location.pathname;
-  return `${base}?d=${key}&view_type=month`;
+const shownMonth = () => {
+  const el = document.querySelector(CAL_TIME);
+  const found = el ? el.textContent.match(/(\d{4})\s*년\s*(\d{1,2})\s*월/) : null;
+  return found ? `${found[1]}-${pad(Number(found[2]))}` : "";
 };
 
-const chip = (item) => {
-  const el = document.createElement("span");
-  el.className = `cv-chip cv-chip--${item.color}`;
-  el.textContent = item.time !== "" ? `${item.time} ${item.title}` : item.title;
+const goMonth = (key, done) => {
+  const want = key.slice(0, 7);
+  let guard = 0;
+  const step = () => {
+    const now = shownMonth();
+    if (now === "" || now === want || guard > 14) {
+      done();
+      return;
+    }
+    guard += 1;
+    const button = document.querySelector(now > want ? PREV_BTN : NEXT_BTN);
+    if (!button) {
+      done();
+      return;
+    }
+    button.click();
+    setTimeout(step, 450);
+  };
+  step();
+};
+
+/** 아임웹 캘린더에서 그 일정을 눌러 상세 창을 띄운다 */
+const openItem = (item) => {
+  if (!document.querySelector(CAL_TIME)) {
+    say("위에 아임웹 캘린더가 없어 상세 창을 열 수 없습니다.", true);
+    return;
+  }
+  goMonth(item.start, () => {
+    const titles = document.querySelectorAll(".fc-title");
+    for (let i = 0; i < titles.length; i += 1) {
+      if (titles[i].textContent.trim() !== item.title) continue;
+      const event = titles[i].closest(".fc-event") || titles[i].parentElement;
+      if (event) {
+        event.click();
+        say("");
+        return;
+      }
+    }
+    const cell = document.querySelector(`[data-date="${item.start}"]`);
+    if (cell) {
+      cell.click();
+      say("그 일정을 바로 찾지 못해 날짜 칸을 열었습니다.");
+      return;
+    }
+    say("아임웹 캘린더에서 그 일정을 찾지 못했습니다.", true);
+  });
+};
+
+/* ---------------------------- 아임웹 상세 창에 «청명 작업현황» 폼 끼우기 */
+
+const safe = (text) => String(text || "")
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const seen = (el) => !!(el && (el.offsetWidth > 0 || el.offsetHeight > 0));
+
+/** 우리가 끼워 넣은 폼의 입력칸은 «채울 칸» 후보에서 빼야 한다 */
+const ours = (el) => root.contains(el) || (el.closest && el.closest(".cvx-panel") !== null);
+
+const matchKey = (el, keys) => {
+  const name = `${el.getAttribute("name") || ""} ${el.getAttribute("id") || ""}`.toLowerCase();
+  for (let i = 0; i < keys.length; i += 1) {
+    if (name.indexOf(keys[i]) >= 0) return true;
+  }
+  return false;
+};
+
+const titleBox = (modal) => {
+  const inputs = modal.querySelectorAll("input[type=text], input:not([type])");
+  let first = null;
+  for (let i = 0; i < inputs.length; i += 1) {
+    if (!seen(inputs[i]) || ours(inputs[i])) continue;
+    if (matchKey(inputs[i], TITLE_KEYS)) return inputs[i];
+    if (!first) first = inputs[i];
+  }
+  return first;
+};
+
+const bodyBox = (modal) => {
+  const areas = modal.querySelectorAll("textarea");
+  for (let i = 0; i < areas.length; i += 1) {
+    if (ours(areas[i])) continue;
+    if (matchKey(areas[i], BODY_KEYS) || seen(areas[i])) return { kind: "area", el: areas[i] };
+  }
+  const rich = modal.querySelectorAll("[contenteditable=true], [contenteditable='']");
+  for (let i = 0; i < rich.length; i += 1) {
+    if (!ours(rich[i])) return { kind: "rich", el: rich[i] };
+  }
+  const frames = modal.querySelectorAll("iframe");
+  for (let i = 0; i < frames.length; i += 1) {
+    let doc = null;
+    try { doc = frames[i].contentDocument; } catch (error) { doc = null; }
+    if (doc && doc.body) return { kind: "frame", el: frames[i], doc: doc };
+  }
+  return null;
+};
+
+const panelData = (panel) => {
+  const value = (name) => {
+    const el = panel.querySelector(`[data-x-${name}]`);
+    return el ? String(el.value || "").trim() : "";
+  };
+  const boxes = panel.querySelectorAll("[data-x-work]");
+  const picked = [];
+  for (let i = 0; i < boxes.length; i += 1) {
+    if (boxes[i].checked) picked.push(boxes[i].getAttribute("data-x-work"));
+  }
+  const raw = value("note").split("\n");
+  const note = [];
+  for (let i = 0; i < raw.length; i += 1) {
+    const line = raw[i].trim();
+    if (line !== "") note.push(line);
+  }
+  return {
+    works: picked,
+    site: value("site"),
+    place: value("place"),
+    owner: value("owner"),
+    state: value("state"),
+    phone: value("phone"),
+    note: note,
+  };
+};
+
+const sheetHtml = (data) => {
+  const rows = [];
+  const row = (name, text) => {
+    if (text === "") return;
+    rows.push(`<tr><td style="${HEAD_CSS}">${name}</td><td style="${CELL_CSS}">${safe(text)}</td></tr>`);
+  };
+  row("작업항목", data.works.join(", "));
+  row("현장", data.site);
+  row("장소", data.place);
+  row("담당자", data.owner);
+  row("연락처", data.phone);
+  row("진행상태", data.state);
+
+  const out = [];
+  if (rows.length > 0) {
+    out.push('<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.7">'
+      + `<tbody>${rows.join("")}</tbody></table>`);
+  }
+  out.push('<p style="margin:16px 0 6px;font-weight:700">진행사항</p>');
+  if (data.note.length > 0) {
+    const items = [];
+    for (let i = 0; i < data.note.length; i += 1) items.push(`<li>${safe(data.note[i])}</li>`);
+    out.push(`<ul style="margin:0 0 14px;padding-left:20px;font-size:14px;line-height:1.8">${items.join("")}</ul>`);
+  } else {
+    out.push('<p style="margin:0 0 14px;color:#98a1ad;font-size:14px">작업이 진행될 때마다 적어 주세요.</p>');
+  }
+  out.push('<p style="margin:16px 0 6px;font-weight:700">BEFORE</p>');
+  out.push('<p style="margin:0 0 14px;color:#98a1ad;font-size:14px">작업 전 사진을 이 자리에 넣어 주세요.</p>');
+  out.push('<p style="margin:16px 0 6px;font-weight:700">AFTER</p>');
+  out.push('<p style="margin:0 0 14px;color:#98a1ad;font-size:14px">작업 후 사진을 이 자리에 넣어 주세요.</p>');
+  return out.join("");
+};
+
+const sheetText = (data) => {
+  const out = [];
+  const row = (name, text) => { if (text !== "") out.push(`${name}: ${text}`); };
+  row("작업항목", data.works.join(", "));
+  row("현장", data.site);
+  row("장소", data.place);
+  row("담당자", data.owner);
+  row("연락처", data.phone);
+  row("진행상태", data.state);
+  out.push("");
+  out.push("[진행사항]");
+  if (data.note.length > 0) {
+    for (let i = 0; i < data.note.length; i += 1) out.push(`- ${data.note[i]}`);
+  } else {
+    out.push("(작업이 진행될 때마다 적어 주세요)");
+  }
+  out.push("");
+  out.push("[BEFORE]");
+  out.push("(작업 전 사진)");
+  out.push("");
+  out.push("[AFTER]");
+  out.push("(작업 후 사진)");
+  return out.join("\n");
+};
+
+const titleLine = (data) => {
+  const parts = [];
+  if (data.site !== "") parts.push(data.site);
+  if (data.works.length > 0) parts.push(data.works.join("·"));
+  if (data.owner !== "") parts.push(data.owner);
+  if (parts.length === 0) return "";
+  return parts.join(" · ") + (data.state !== "" && data.state !== "예정" ? ` [${data.state}]` : "");
+};
+
+const tell = (panel, text) => {
+  const box = panel.querySelector(".cvx-said");
+  if (box) box.textContent = text;
+};
+
+const putInto = (panel, modal, alsoTitle) => {
+  const data = panelData(panel);
+  const body = bodyBox(modal);
+  const done = [];
+
+  if (alsoTitle) {
+    const box = titleBox(modal);
+    const line = titleLine(data);
+    if (box && line !== "") {
+      box.value = line;
+      box.dispatchEvent(new Event("input", { bubbles: true }));
+      box.dispatchEvent(new Event("change", { bubbles: true }));
+      done.push("제목");
+    }
+  }
+
+  if (body) {
+    if (body.kind === "area") {
+      const now = String(body.el.value || "");
+      body.el.value = now === "" ? sheetText(data) : `${now}\n\n${sheetText(data)}`;
+      body.el.dispatchEvent(new Event("input", { bubbles: true }));
+      body.el.dispatchEvent(new Event("change", { bubbles: true }));
+    } else if (body.kind === "rich") {
+      const wrap = document.createElement("div");
+      wrap.innerHTML = sheetHtml(data);
+      body.el.appendChild(wrap);
+      body.el.dispatchEvent(new Event("input", { bubbles: true }));
+    } else {
+      const wrap = body.doc.createElement("div");
+      wrap.innerHTML = sheetHtml(data);
+      body.doc.body.appendChild(wrap);
+    }
+    done.push("본문");
+  }
+
+  if (done.length === 0) {
+    tell(panel, "채울 칸을 찾지 못했습니다. «표 복사»를 눌러 본문에 직접 붙여넣어 주세요.");
+    return;
+  }
+  tell(panel, `${done.join("·")}을 넣었습니다. 사진을 얹고 아임웹의 저장을 누르세요.`);
+};
+
+const copyPanel = (panel) => {
+  const text = sheetText(panelData(panel));
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(
+      () => tell(panel, "표 내용을 복사했습니다. 본문에 붙여넣으세요."),
+      () => tell(panel, "복사가 막혔습니다.")
+    );
+    return;
+  }
+  tell(panel, "이 브라우저에서는 복사가 안 됩니다.");
+};
+
+const field = (label, node) => {
+  const wrap = document.createElement("div");
+  wrap.className = "cvx-field";
+  const name = document.createElement("span");
+  name.textContent = label;
+  wrap.appendChild(name);
+  wrap.appendChild(node);
+  return wrap;
+};
+
+const textBox = (mark, hint) => {
+  const el = document.createElement("input");
+  el.className = "cvx-input";
+  el.setAttribute("type", "text");
+  el.setAttribute("placeholder", hint);
+  el.setAttribute(`data-x-${mark}`, "");
   return el;
 };
 
-const cellFor = (date, monthOf) => {
-  const key = keyOf(date);
-  const cell = document.createElement("button");
-  cell.className = "cv-cell";
-  cell.setAttribute("type", "button");
-  if (monthOf !== null && date.getMonth() !== monthOf) cell.className += " cv-cell--pad";
-  if (key === todayKey()) cell.className += " cv-cell--today";
-  if (key === chosen) cell.className += " cv-cell--on";
-
-  const num = document.createElement("span");
-  num.className = "cv-num";
-  if (date.getDay() === 0) num.className += " cv-num--sun";
-  if (date.getDay() === 6) num.className += " cv-num--sat";
-  num.textContent = String(date.getDate());
-  cell.appendChild(num);
-
-  const day = onKey(key);
-  const limit = day.length > CELL_MAX ? CELL_MAX - 1 : day.length;
-  for (let i = 0; i < limit; i += 1) cell.appendChild(chip(day[i]));
-  if (day.length > limit) {
-    const more = document.createElement("span");
-    more.className = "cv-more";
-    more.textContent = `+${day.length - limit}건 더`;
-    cell.appendChild(more);
+const picker = (mark, list) => {
+  const el = document.createElement("select");
+  el.className = "cvx-input";
+  el.setAttribute(`data-x-${mark}`, "");
+  for (let i = 0; i < list.length; i += 1) {
+    const option = document.createElement("option");
+    option.setAttribute("value", list[i]);
+    option.textContent = list[i];
+    el.appendChild(option);
   }
-  cell.addEventListener("click", () => {
-    chosen = key;
-    draw();
-  });
-  return cell;
+  return el;
 };
 
-const headRow = (grid, days, dates) => {
-  for (let i = 0; i < days; i += 1) {
-    const at = dates ? dates[i].getDay() : i;
-    const head = document.createElement("div");
-    head.className = "cv-head";
-    if (at === 0) head.className += " cv-head--sun";
-    if (at === 6) head.className += " cv-head--sat";
-    head.textContent = dates
-      ? `${dates[i].getMonth() + 1}/${dates[i].getDate()} ${DAY_NAMES[at]}`
-      : DAY_NAMES[i];
-    grid.appendChild(head);
-  }
-};
+const buildPanel = (modal) => {
+  const panel = document.createElement("div");
+  panel.className = "cvx-panel";
 
-const drawGrid = () => {
-  const box = pick("cal");
-  box.textContent = "";
-  const view = root.getAttribute("data-view");
+  const head = document.createElement("strong");
+  head.className = "cvx-head";
+  head.textContent = "청명 작업현황 채우기";
+  panel.appendChild(head);
+
+  const checks = document.createElement("div");
+  checks.className = "cvx-checks";
+  for (let i = 0; i < works.length; i += 1) {
+    const label = document.createElement("label");
+    label.className = "cvx-check";
+    const box = document.createElement("input");
+    box.setAttribute("type", "checkbox");
+    box.setAttribute("data-x-work", works[i]);
+    const text = document.createElement("span");
+    text.textContent = works[i];
+    label.appendChild(box);
+    label.appendChild(text);
+    checks.appendChild(label);
+  }
+  panel.appendChild(field("작업항목 (여러 개 고를 수 있습니다)", checks));
+
   const grid = document.createElement("div");
+  grid.className = "cvx-grid";
+  grid.appendChild(field("현장명", textBox("site", "예) 카카오프렌즈 지곡점")));
+  grid.appendChild(field("장소", textBox("place", "예) 수원 권선구 …")));
+  grid.appendChild(field("담당자", picker("owner", owners)));
+  grid.appendChild(field("진행상태", picker("state", states)));
+  grid.appendChild(field("연락처", textBox("phone", "010-0000-0000")));
+  panel.appendChild(grid);
 
-  if (view === "day") {
-    grid.className = "cv-grid cv-grid--day";
-    headRow(grid, 1, [cursor]);
-    grid.appendChild(cellFor(cursor, null));
-  } else if (view === "week") {
-    grid.className = "cv-grid cv-grid--week";
-    const start = weekStart(cursor);
-    const dates = [];
-    for (let i = 0; i < 7; i += 1) dates.push(addDays(start, i));
-    headRow(grid, 7, dates);
-    for (let i = 0; i < 7; i += 1) grid.appendChild(cellFor(dates[i], null));
-  } else {
-    grid.className = "cv-grid";
-    headRow(grid, 7, null);
-    const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
-    const start = weekStart(first);
-    for (let i = 0; i < 42; i += 1) grid.appendChild(cellFor(addDays(start, i), cursor.getMonth()));
-  }
-  box.appendChild(grid);
+  const note = document.createElement("textarea");
+  note.className = "cvx-input cvx-area";
+  note.setAttribute("rows", "3");
+  note.setAttribute("placeholder", "한 줄에 하나씩");
+  note.setAttribute("data-x-note", "");
+  panel.appendChild(field("진행사항", note));
+
+  const tools = document.createElement("div");
+  tools.className = "cvx-tools";
+  const both = document.createElement("button");
+  both.className = "cvx-btn cvx-btn--main";
+  both.setAttribute("type", "button");
+  both.textContent = "제목·본문 채우기";
+  both.addEventListener("click", () => putInto(panel, modal, true));
+  const only = document.createElement("button");
+  only.className = "cvx-btn";
+  only.setAttribute("type", "button");
+  only.textContent = "본문만 채우기";
+  only.addEventListener("click", () => putInto(panel, modal, false));
+  const copy = document.createElement("button");
+  copy.className = "cvx-btn";
+  copy.setAttribute("type", "button");
+  copy.textContent = "표 복사";
+  copy.addEventListener("click", () => copyPanel(panel));
+  tools.appendChild(both);
+  tools.appendChild(only);
+  tools.appendChild(copy);
+  panel.appendChild(tools);
+
+  const said = document.createElement("p");
+  said.className = "cvx-said";
+  said.textContent = "채운 뒤 사진을 얹고, 저장은 아임웹의 저장 버튼으로 하세요.";
+  panel.appendChild(said);
+  return panel;
 };
 
-const period = () => {
-  const view = root.getAttribute("data-view");
-  if (view === "day") return longDate(keyOf(cursor));
-  if (view === "week") {
-    const start = weekStart(cursor);
-    const end = addDays(start, 6);
-    return `${start.getFullYear()}년 ${start.getMonth() + 1}월 ${start.getDate()}일 ~ ${end.getMonth() + 1}월 ${end.getDate()}일`;
+const tryPanel = () => {
+  const boxes = document.querySelectorAll("[class*=modal], [class*=layer], [class*=popup], dialog");
+  for (let i = 0; i < boxes.length; i += 1) {
+    const modal = boxes[i];
+    if (root.contains(modal) || !seen(modal)) continue;
+    if (modal.querySelector(".cvx-panel")) continue;
+    if (!bodyBox(modal)) continue;
+    modal.appendChild(buildPanel(modal));
+    return;
   }
-  return `${cursor.getFullYear()}년 ${cursor.getMonth() + 1}월`;
 };
+
+const watchModal = () => {
+  if (typeof MutationObserver === "function") {
+    const watcher = new MutationObserver(() => { setTimeout(tryPanel, 80); });
+    watcher.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "style"],
+    });
+  }
+  setInterval(tryPanel, 2000);
+};
+
+/* ---------------------------------------------------------------- 그리기 */
 
 const itemCard = (item) => {
   const box = document.createElement("article");
@@ -799,12 +1097,11 @@ const itemCard = (item) => {
     box.appendChild(badge);
   }
 
-  const open = document.createElement("a");
+  const open = document.createElement("button");
   open.className = "cv-open";
-  open.setAttribute("href", openUrl(item.start));
-  open.setAttribute("target", "_blank");
-  open.setAttribute("rel", "noopener");
+  open.setAttribute("type", "button");
   open.textContent = "열기";
+  open.addEventListener("click", () => openItem(item));
   box.appendChild(open);
   return box;
 };
@@ -812,37 +1109,20 @@ const itemCard = (item) => {
 const drawDay = () => {
   const list = pick("day-list");
   list.textContent = "";
-  if (chosen === "") {
-    pick("day-title").textContent = "날짜를 누르면 그날 일정이 보입니다";
-    return;
-  }
-  const day = onKey(chosen);
-  pick("day-title").textContent = `${longDate(chosen)} · ${day.length}건`;
+  const day = chosen !== "" ? onKey(chosen) : [];
+  pick("day-title").textContent = chosen === ""
+    ? "위 달력에서 날짜를 눌러 주세요"
+    : `${longDate(chosen)} · ${day.length}건`;
   if (day.length === 0) {
     const none = document.createElement("p");
     none.className = "cv-empty";
-    none.textContent = "이 날은 등록된 일정이 없습니다.";
+    none.textContent = ready
+      ? "이 날은 등록된 일정이 없습니다. 위 달력에서 다른 날짜를 눌러 보세요."
+      : "일정을 받아오고 있습니다…";
     list.appendChild(none);
     return;
   }
   for (let i = 0; i < day.length; i += 1) list.appendChild(itemCard(day[i]));
-};
-
-/* ------------------------------------------------------------- 정리 표 */
-
-const spanRange = () => {
-  const now = new Date();
-  if (span === "year") {
-    return [keyOf(new Date(now.getFullYear(), 0, 1)), keyOf(new Date(now.getFullYear(), 11, 31))];
-  }
-  if (span === "quarter") {
-    const from = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1);
-    const to = new Date(cursor.getFullYear(), cursor.getMonth() + 2, 0);
-    return [keyOf(from), keyOf(to)];
-  }
-  const from = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
-  const to = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
-  return [keyOf(from), keyOf(to)];
 };
 
 const filtered = () => {
@@ -885,7 +1165,6 @@ const drawSheet = () => {
     td.textContent = "해당하는 일정이 없습니다.";
     tr.appendChild(td);
     body.appendChild(tr);
-    return;
   }
 
   for (let i = 0; i < rows.length; i += 1) {
@@ -904,18 +1183,28 @@ const drawSheet = () => {
     tags.textContent = item.tags.join(", ");
     const go = document.createElement("td");
     go.className = "cv-td";
-    const link = document.createElement("a");
-    link.className = "cv-open";
-    link.setAttribute("href", openUrl(item.start));
-    link.setAttribute("target", "_blank");
-    link.setAttribute("rel", "noopener");
-    link.textContent = "열기";
-    go.appendChild(link);
+    const open = document.createElement("button");
+    open.className = "cv-open";
+    open.setAttribute("type", "button");
+    open.textContent = "열기";
+    open.addEventListener("click", () => openItem(item));
+    go.appendChild(open);
     tr.appendChild(date);
     tr.appendChild(name);
     tr.appendChild(tags);
     tr.appendChild(go);
     body.appendChild(tr);
+  }
+
+  const raw = pick("raw");
+  raw.textContent = "";
+  const all = between("0000-00-00", "9999-99-99");
+  for (let i = 0; i < all.length && i < 40; i += 1) {
+    const line = document.createElement("div");
+    line.className = "cv-raw__line";
+    line.textContent = `${all[i].title} — 받은 값: ${all[i].raw} → 읽은 날짜: ${all[i].start}`
+      + (all[i].last !== all[i].start ? ` ~ ${all[i].last}` : "");
+    raw.appendChild(line);
   }
 };
 
@@ -933,50 +1222,37 @@ const copySheet = () => {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(
       () => { pick("sum").textContent = `표 ${rows.length}줄을 복사했습니다. 엑셀에 붙여넣으세요.`; },
-      () => { pick("sum").textContent = "복사가 막혔습니다. 표를 직접 선택해 복사해 주세요."; }
+      () => { pick("sum").textContent = "복사가 막혔습니다. 표를 직접 선택해 주세요."; }
     );
     return;
   }
-  pick("sum").textContent = "이 브라우저에서는 복사가 안 됩니다. 표를 직접 선택해 주세요.";
+  pick("sum").textContent = "이 브라우저에서는 복사가 안 됩니다.";
 };
 
-/* -------------------------------------------------------------- 움직임 */
-
 const draw = () => {
-  pick("period").textContent = period();
-  drawGrid();
   drawDay();
   drawSheet();
 };
 
-const need = () => {
-  const view = root.getAttribute("data-view");
-  let from = "";
-  let to = "";
-  if (view === "day") {
-    from = keyOf(addDays(cursor, -1));
-    to = keyOf(addDays(cursor, 1));
-  } else if (view === "week") {
-    from = keyOf(weekStart(cursor));
-    to = keyOf(addDays(weekStart(cursor), 6));
-  } else {
-    const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
-    from = keyOf(weekStart(first));
-    to = keyOf(addDays(weekStart(first), 41));
-  }
-  const bounds = spanRange();
-  if (bounds[0] < from) from = bounds[0];
-  if (bounds[1] > to) to = bounds[1];
-  ask(from, to);
+/* -------------------------------- 아임웹 달력에서 누른 날짜를 따라간다 */
+
+const fromUrl = () => {
+  const found = location.search.match(/[?&]d=(\d{4}-\d{1,2}-\d{1,2})/);
+  return found ? datePart(found[1]) : "";
 };
 
-const setView = (mode) => {
-  root.setAttribute("data-view", mode);
-  pick("view-day").setAttribute("aria-pressed", mode === "day" ? "true" : "false");
-  pick("view-week").setAttribute("aria-pressed", mode === "week" ? "true" : "false");
-  pick("view-month").setAttribute("aria-pressed", mode === "month" ? "true" : "false");
-  draw();
-  need();
+const followClicks = () => {
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!target || !target.closest || root.contains(target)) return;
+    const cell = target.closest("[data-date]");
+    if (!cell) return;
+    const key = datePart(cell.getAttribute("data-date"));
+    if (key === "" || key === chosen) return;
+    chosen = key;
+    draw();
+    ask();
+  }, true);
 };
 
 const setSpan = (mode) => {
@@ -985,16 +1261,7 @@ const setSpan = (mode) => {
   pick("span-quarter").setAttribute("aria-pressed", mode === "quarter" ? "true" : "false");
   pick("span-year").setAttribute("aria-pressed", mode === "year" ? "true" : "false");
   drawSheet();
-  need();
-};
-
-const move = (step) => {
-  const view = root.getAttribute("data-view");
-  if (view === "day") cursor = addDays(cursor, step);
-  else if (view === "week") cursor = addDays(cursor, 7 * step);
-  else cursor = new Date(cursor.getFullYear(), cursor.getMonth() + step, 1);
-  draw();
-  need();
+  ask();
 };
 
 const applyWidth = () => {
@@ -1009,6 +1276,8 @@ const applyWidth = () => {
 const setup = () => {
   if (!root) return;
   listen();
+  watchModal();
+  followClicks();
 
   const box = pick("pick");
   const all = document.createElement("option");
@@ -1022,18 +1291,11 @@ const setup = () => {
     box.appendChild(option);
   }
 
-  chosen = todayKey();
-  pick("prev").addEventListener("click", () => move(-1));
-  pick("next").addEventListener("click", () => move(1));
-  pick("today").addEventListener("click", () => {
-    cursor = new Date();
-    chosen = todayKey();
-    draw();
-    need();
+  chosen = fromUrl() !== "" ? fromUrl() : todayKey();
+  pick("reload").addEventListener("click", () => {
+    ready = false;
+    ask();
   });
-  pick("view-day").addEventListener("click", () => setView("day"));
-  pick("view-week").addEventListener("click", () => setView("week"));
-  pick("view-month").addEventListener("click", () => setView("month"));
   pick("span-month").addEventListener("click", () => setSpan("month"));
   pick("span-quarter").addEventListener("click", () => setSpan("quarter"));
   pick("span-year").addEventListener("click", () => setSpan("year"));
@@ -1050,7 +1312,7 @@ const setup = () => {
   window.addEventListener("resize", applyWidth);
 
   // 아임웹 캘린더가 먼저 자료를 받아오도록 조금 기다린 뒤 직접도 물어본다
-  setTimeout(need, 1200);
+  setTimeout(ask, 1200);
 };
 
 setup();
