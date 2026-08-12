@@ -95,13 +95,16 @@
   <p class="cp-lead">
     캘린더가 있는 페이지에 <b>잠시만</b> 올려 두는 도구입니다. 이 아래에 캘린더의 화면 구조와,
     일정을 추가·수정할 때 오가는 통신을 정리해 보여 줍니다. <b>결과 복사</b>를 눌러 그대로 알려
-    주시면 «정리 위젯»을 정확히 만들 수 있습니다.
+    주시면 «정리 위젯»을 정확히 만들 수 있습니다. 저장·이동으로 페이지가 새로 열려도
+    기록은 이 브라우저에 남아 있습니다.
   </p>
 
   <ol class="cp-steps">
     <li>이 위젯을 캘린더와 <b>같은 페이지</b>에 놓고 저장합니다.</li>
     <li>페이지를 새로 고칩니다. (관리자로 로그인한 상태여야 합니다)</li>
-    <li>캘린더에서 <b>시험용 일정 하나를 추가</b>하고, 이어서 <b>수정</b>도 해 봅니다.</li>
+    <li>캘린더에서 <b>시험용 일정 하나를 추가하고 «저장»까지</b> 누릅니다. 이어서 그 일정을
+      열어 <b>수정·저장</b>도 해 봅니다. (저장하면 페이지가 새로 열리지만
+      <b>기록은 그대로 남습니다</b>)</li>
     <li><b>결과 복사</b>를 눌러 붙여넣어 알려 주세요. 확인 뒤 이 위젯은 지우면 됩니다.</li>
   </ol>
 
@@ -129,11 +132,36 @@
 const root = document.querySelector("[data-probe-root]");
 const pick = (name) => root.querySelector(`[data-${name}]`);
 
+const pad2 = (value) => `0${value}`.slice(-2);
 const HIDE_KEY = /token|key|secret|sess|pass|auth|cookie|csrf/i;
 const CAL_HINT = /calendar|schedule|event|cal_|sched/i;
-const MAX_CALLS = 40;
+const MAX_CALLS = 60;
+const KEEP_KEY = "cheongmyeong_probe_log";
 
-const calls = [];
+/** 저장·이동을 누르면 페이지가 새로 열려 기록이 사라진다. 그래서 남겨 둔다. */
+const stored = () => {
+  try {
+    const text = localStorage.getItem(KEEP_KEY);
+    const data = text ? JSON.parse(text) : [];
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+const store = (rows) => {
+  try {
+    localStorage.setItem(KEEP_KEY, JSON.stringify(rows.slice(-MAX_CALLS)));
+  } catch (error) {
+    return;
+  }
+};
+
+const forget = () => {
+  try { localStorage.removeItem(KEEP_KEY); } catch (error) { return; }
+};
+
+const calls = stored();
 let dom = [];
 
 const filters = () => {
@@ -249,9 +277,23 @@ const answerShape = (text) => {
   return dig(data, 0);
 };
 
+const clock = () => {
+  const now = new Date();
+  return `${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`;
+};
+
 const remember = (row) => {
+  row.at = clock();
+  row.page = `${location.pathname}${location.search}`;
   calls.push(row);
   if (calls.length > MAX_CALLS) calls.shift();
+  store(calls);
+  report();
+};
+
+/** 응답이 늦게 온 것도 보관한다 */
+const restore = () => {
+  store(calls);
   report();
 };
 
@@ -271,8 +313,8 @@ const watchNetwork = () => {
         row.got = `${response.status}`;
         response.clone().text().then((text) => {
           row.got = `${response.status} · ${answerShape(text)}`;
-          report();
-        }, () => { report(); });
+          restore();
+        }, () => { restore(); });
         return response;
       });
     };
@@ -298,7 +340,7 @@ const watchNetwork = () => {
           text = "";
         }
         row.got = `${this.status} · ${text === "" ? "(글자 아님)" : answerShape(text)}`;
-        report();
+        restore();
       });
     }
     return realSend.apply(this, arguments);
@@ -371,9 +413,14 @@ const build = () => {
   out.push("");
   out.push(`[통신 기록] ${calls.length}건 (값은 적지 않고 항목 이름만)`);
   if (calls.length === 0) out.push("· 아직 없습니다. 캘린더에서 일정을 추가·수정해 보세요.");
+  let lastPage = "";
   for (let i = 0; i < calls.length; i += 1) {
     const row = calls[i];
-    out.push(`${i + 1}) ${row.method} ${row.url}`);
+    if (row.page && row.page !== lastPage) {
+      out.push(`--- 페이지: ${row.page} ---`);
+      lastPage = row.page;
+    }
+    out.push(`${i + 1}) ${row.at ? `[${row.at}] ` : ""}${row.method} ${row.url}`);
     out.push(`   보냄: ${row.sent}`);
     out.push(`   받음: ${row.got}`);
   }
@@ -415,6 +462,7 @@ const setup = () => {
   pick("copy").addEventListener("click", copyOut);
   pick("clear").addEventListener("click", () => {
     calls.length = 0;
+    forget();
     report();
   });
   scan();

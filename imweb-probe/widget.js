@@ -4,11 +4,36 @@
 const root = document.querySelector("[data-probe-root]");
 const pick = (name) => root.querySelector(`[data-${name}]`);
 
+const pad2 = (value) => `0${value}`.slice(-2);
 const HIDE_KEY = /token|key|secret|sess|pass|auth|cookie|csrf/i;
 const CAL_HINT = /calendar|schedule|event|cal_|sched/i;
-const MAX_CALLS = 40;
+const MAX_CALLS = 60;
+const KEEP_KEY = "cheongmyeong_probe_log";
 
-const calls = [];
+/** 저장·이동을 누르면 페이지가 새로 열려 기록이 사라진다. 그래서 남겨 둔다. */
+const stored = () => {
+  try {
+    const text = localStorage.getItem(KEEP_KEY);
+    const data = text ? JSON.parse(text) : [];
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+const store = (rows) => {
+  try {
+    localStorage.setItem(KEEP_KEY, JSON.stringify(rows.slice(-MAX_CALLS)));
+  } catch (error) {
+    return;
+  }
+};
+
+const forget = () => {
+  try { localStorage.removeItem(KEEP_KEY); } catch (error) { return; }
+};
+
+const calls = stored();
 let dom = [];
 
 const filters = () => {
@@ -124,9 +149,23 @@ const answerShape = (text) => {
   return dig(data, 0);
 };
 
+const clock = () => {
+  const now = new Date();
+  return `${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`;
+};
+
 const remember = (row) => {
+  row.at = clock();
+  row.page = `${location.pathname}${location.search}`;
   calls.push(row);
   if (calls.length > MAX_CALLS) calls.shift();
+  store(calls);
+  report();
+};
+
+/** 응답이 늦게 온 것도 보관한다 */
+const restore = () => {
+  store(calls);
   report();
 };
 
@@ -146,8 +185,8 @@ const watchNetwork = () => {
         row.got = `${response.status}`;
         response.clone().text().then((text) => {
           row.got = `${response.status} · ${answerShape(text)}`;
-          report();
-        }, () => { report(); });
+          restore();
+        }, () => { restore(); });
         return response;
       });
     };
@@ -173,7 +212,7 @@ const watchNetwork = () => {
           text = "";
         }
         row.got = `${this.status} · ${text === "" ? "(글자 아님)" : answerShape(text)}`;
-        report();
+        restore();
       });
     }
     return realSend.apply(this, arguments);
@@ -246,9 +285,14 @@ const build = () => {
   out.push("");
   out.push(`[통신 기록] ${calls.length}건 (값은 적지 않고 항목 이름만)`);
   if (calls.length === 0) out.push("· 아직 없습니다. 캘린더에서 일정을 추가·수정해 보세요.");
+  let lastPage = "";
   for (let i = 0; i < calls.length; i += 1) {
     const row = calls[i];
-    out.push(`${i + 1}) ${row.method} ${row.url}`);
+    if (row.page && row.page !== lastPage) {
+      out.push(`--- 페이지: ${row.page} ---`);
+      lastPage = row.page;
+    }
+    out.push(`${i + 1}) ${row.at ? `[${row.at}] ` : ""}${row.method} ${row.url}`);
     out.push(`   보냄: ${row.sent}`);
     out.push(`   받음: ${row.got}`);
   }
@@ -290,6 +334,7 @@ const setup = () => {
   pick("copy").addEventListener("click", copyOut);
   pick("clear").addEventListener("click", () => {
     calls.length = 0;
+    forget();
     report();
   });
   scan();
