@@ -140,7 +140,9 @@ const readList = (html, seen) => {
     note(text);
     take(leaves[i], text);
   }
-  return { items: found, links: links.length, samples: samples };
+  // 게시판 주소 자리에 «이 달력이 놓인 페이지»를 넣는 실수가 흔하다
+  const self = doc.querySelector("[data-schedule-root]") !== null;
+  return { items: found, links: links.length, samples: samples, self: self };
 };
 
 const pageUrl = (base, page) => {
@@ -171,16 +173,20 @@ const load = () => {
   const seenTitles = [];
   let links = 0;
   let okPages = 0;
+  let sawSelf = false;
   let failed = "";
 
   const step = (page) => {
     if (page > pages) {
       loading = false;
-      boardOk = okPages > 0;
+      boardOk = okPages > 0 && !sawSelf;
       setWriteLink();
       items = gathered;
       items.sort((a, b) => (a.key + a.time < b.key + b.time ? -1 : 1));
-      if (items.length > 0) {
+      if (sawSelf) {
+        say(`«${base}» 는 게시판이 아니라 이 달력이 놓인 페이지입니다. 아임웹 관리자에서 `
+          + "일정용 «게시판»을 만들고, 그 게시판 페이지 주소로 data-board 를 바꿔 주세요.", true);
+      } else if (items.length > 0) {
         say(`게시판에서 일정 ${items.length}개를 읽었습니다.`);
       } else if (okPages === 0) {
         say(`게시판을 읽지 못했습니다 (${failed}). 주소가 맞는지, 같은 사이트 안의 주소인지 확인해 주세요.`, true);
@@ -203,6 +209,7 @@ const load = () => {
       .then((html) => {
         okPages += 1;
         const batch = readList(html, seen);
+        if (batch.self) sawSelf = true;
         links += batch.links;
         for (let i = 0; i < batch.samples.length; i += 1) {
           const text = batch.samples[i];
@@ -232,6 +239,7 @@ const showDiag = (base, okPages, links, titles) => {
   };
   line(`게시판 주소: ${base}`);
   line(`읽은 목록 페이지: ${okPages}장 · 찾은 링크: ${links}개 · 일정으로 읽은 글: ${items.length}개`);
+  if (!boardOk && okPages > 0) line("※ 이 주소는 게시판 목록이 아닙니다 (이 달력이 있는 페이지를 가리키고 있습니다).");
   if (titles.length === 0) {
     line("목록에서 글 제목을 하나도 찾지 못했습니다.");
   } else {
@@ -806,24 +814,10 @@ const applyWidth = () => {
   else root.classList.remove("is-narrow");
 };
 
-const openPanel = () => {
-  root.setAttribute("data-state", "open");
-  pick("panel").hidden = false;
-  pick("gate").hidden = true;
+const start = () => {
   applyWidth();
   draw();
   load();
-};
-
-const checkPin = () => {
-  const wanted = setting("pin");
-  const typed = String(pick("pin-input").value || "").trim();
-  if (wanted === "" || typed === wanted) {
-    pick("pin-error").hidden = true;
-    openPanel();
-    return;
-  }
-  pick("pin-error").hidden = false;
 };
 
 const setup = () => {
@@ -834,11 +828,6 @@ const setup = () => {
   buildForm();
   compose();
   setWriteLink();
-
-  pick("pin-submit").addEventListener("click", checkPin);
-  pick("pin-input").addEventListener("keydown", (event) => {
-    if (event.key === "Enter") checkPin();
-  });
 
   pick("prev").addEventListener("click", () => move(-1));
   pick("next").addEventListener("click", () => move(1));
@@ -874,7 +863,7 @@ const setup = () => {
   }
   window.addEventListener("resize", applyWidth);
 
-  if (setting("pin") === "") openPanel();
+  start();
 };
 
 setup();

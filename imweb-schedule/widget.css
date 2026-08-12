@@ -21,27 +21,11 @@
   text-size-adjust: 100%;
 }
 
-.cs-app[data-state="open"] .cs-gate { display: none; }
 .cs-app .cs-input,
 .cs-app .cs-btn,
 .cs-app .cs-tab,
 .cs-app .cs-ghost,
 .cs-app .cs-round { box-sizing: border-box; }
-
-/* ------------------------------------------------------------------ 게이트 */
-
-.cs-app .cs-gate {
-  max-width: 420px;
-  margin: 0 auto;
-  padding: 28px 20px;
-  border: 1px solid var(--edge);
-  border-radius: 14px;
-  text-align: center;
-}
-.cs-app .cs-gate__title { margin: 0 0 6px; font-size: 20px; font-weight: 700; }
-.cs-app .cs-gate__desc { margin: 0 0 16px; font-size: 14px; color: var(--muted); }
-.cs-app .cs-gate__row { display: flex; gap: 8px; }
-.cs-app .cs-gate__error { margin: 10px 0 0; font-size: 14px; color: #d33b3b; }
 
 /* -------------------------------------------------------------- 공통 부품 */
 
@@ -427,9 +411,6 @@
 .cs-app.is-mobile .cs-area { min-height: 0; }
 .cs-app.is-mobile .cs-btn { width: 100%; min-height: 46px; }
 .cs-app.is-mobile .cs-check { flex: 1 1 44%; }
-.cs-app.is-mobile .cs-gate__row { display: block; }
-.cs-app.is-mobile .cs-gate__row .cs-input { margin-bottom: 8px; }
-.cs-app.is-mobile .cs-gate__row .cs-btn { margin-top: 0; }
 
 .cs-app.is-narrow .cs-cell { min-height: 54px; }
 .cs-app.is-narrow .cs-cell__num { font-size: 12px; }
@@ -443,7 +424,6 @@
 /* -------------------------------------------------------------------- 인쇄 */
 
 @media print {
-  .cs-app .cs-gate,
   .cs-app .cs-bar__right,
   .cs-app .cs-new,
   .cs-app .cs-item__foot { display: none; }

@@ -5,8 +5,10 @@
   아임웹 관리자 → 페이지 편집 → 위젯 추가 → 「코드」 → 코드 에디터 열기 →
   이 파일 내용을 처음부터 끝까지 통째로 붙여넣으세요.
 
+  달력은 바로 열립니다(접속 번호 없음). 직원만 보게 하려면 아임웹 관리자에서
+  이 페이지의 «접근 권한»을 회원 전용으로 잠그세요.
+
   고칠 곳은 바로 아래 <section ...> 한 줄입니다.
-    · data-pin="8282"       접속 번호 (비우면 번호 없이 열립니다)
     · data-board="/37"      일정 게시판 목록 주소 (suwonplumbing.imweb.me 의 게시판)
                             게시판을 새로 만들면 그 주소로 바꾸세요
     · data-write=""         글쓰기 주소 (비우면 게시판 주소로 갑니다)
@@ -45,27 +47,11 @@
   text-size-adjust: 100%;
 }
 
-.cs-app[data-state="open"] .cs-gate { display: none; }
 .cs-app .cs-input,
 .cs-app .cs-btn,
 .cs-app .cs-tab,
 .cs-app .cs-ghost,
 .cs-app .cs-round { box-sizing: border-box; }
-
-/* ------------------------------------------------------------------ 게이트 */
-
-.cs-app .cs-gate {
-  max-width: 420px;
-  margin: 0 auto;
-  padding: 28px 20px;
-  border: 1px solid var(--edge);
-  border-radius: 14px;
-  text-align: center;
-}
-.cs-app .cs-gate__title { margin: 0 0 6px; font-size: 20px; font-weight: 700; }
-.cs-app .cs-gate__desc { margin: 0 0 16px; font-size: 14px; color: var(--muted); }
-.cs-app .cs-gate__row { display: flex; gap: 8px; }
-.cs-app .cs-gate__error { margin: 10px 0 0; font-size: 14px; color: #d33b3b; }
 
 /* -------------------------------------------------------------- 공통 부품 */
 
@@ -451,9 +437,6 @@
 .cs-app.is-mobile .cs-area { min-height: 0; }
 .cs-app.is-mobile .cs-btn { width: 100%; min-height: 46px; }
 .cs-app.is-mobile .cs-check { flex: 1 1 44%; }
-.cs-app.is-mobile .cs-gate__row { display: block; }
-.cs-app.is-mobile .cs-gate__row .cs-input { margin-bottom: 8px; }
-.cs-app.is-mobile .cs-gate__row .cs-btn { margin-top: 0; }
 
 .cs-app.is-narrow .cs-cell { min-height: 54px; }
 .cs-app.is-narrow .cs-cell__num { font-size: 12px; }
@@ -467,7 +450,6 @@
 /* -------------------------------------------------------------------- 인쇄 */
 
 @media print {
-  .cs-app .cs-gate,
   .cs-app .cs-bar__right,
   .cs-app .cs-new,
   .cs-app .cs-item__foot { display: none; }
@@ -475,25 +457,14 @@
 }
 </style>
 
-<section class="cs-app" data-state="locked" data-view="month" data-schedule-root
-  data-pin="8282"
+<section class="cs-app" data-view="month" data-schedule-root
   data-board="/37"
   data-write=""
   data-pages="3"
   data-works="누수탐지,누수피해복구,하수구,옥상방수,외벽방수,기타"
   data-owners="윤병동,송경훈,원정연">
 
-  <div class="cs-gate" data-gate>
-    <h2 class="cs-gate__title">청명 일정</h2>
-    <p class="cs-gate__desc">직원용입니다. 접속 번호를 넣어 주세요.</p>
-    <div class="cs-gate__row">
-      <input class="cs-input" type="password" inputmode="numeric" autocomplete="off" aria-label="접속 번호" data-pin-input>
-      <button class="cs-btn" type="button" data-pin-submit>들어가기</button>
-    </div>
-    <p class="cs-gate__error" data-pin-error hidden>번호가 맞지 않습니다.</p>
-  </div>
-
-  <div class="cs-panel" data-panel hidden>
+  <div class="cs-panel" data-panel>
     <div class="cs-bar">
       <div class="cs-nav">
         <button class="cs-round" type="button" aria-label="이전" data-prev>‹</button>
@@ -748,7 +719,9 @@ const readList = (html, seen) => {
     note(text);
     take(leaves[i], text);
   }
-  return { items: found, links: links.length, samples: samples };
+  // 게시판 주소 자리에 «이 달력이 놓인 페이지»를 넣는 실수가 흔하다
+  const self = doc.querySelector("[data-schedule-root]") !== null;
+  return { items: found, links: links.length, samples: samples, self: self };
 };
 
 const pageUrl = (base, page) => {
@@ -779,16 +752,20 @@ const load = () => {
   const seenTitles = [];
   let links = 0;
   let okPages = 0;
+  let sawSelf = false;
   let failed = "";
 
   const step = (page) => {
     if (page > pages) {
       loading = false;
-      boardOk = okPages > 0;
+      boardOk = okPages > 0 && !sawSelf;
       setWriteLink();
       items = gathered;
       items.sort((a, b) => (a.key + a.time < b.key + b.time ? -1 : 1));
-      if (items.length > 0) {
+      if (sawSelf) {
+        say(`«${base}» 는 게시판이 아니라 이 달력이 놓인 페이지입니다. 아임웹 관리자에서 `
+          + "일정용 «게시판»을 만들고, 그 게시판 페이지 주소로 data-board 를 바꿔 주세요.", true);
+      } else if (items.length > 0) {
         say(`게시판에서 일정 ${items.length}개를 읽었습니다.`);
       } else if (okPages === 0) {
         say(`게시판을 읽지 못했습니다 (${failed}). 주소가 맞는지, 같은 사이트 안의 주소인지 확인해 주세요.`, true);
@@ -811,6 +788,7 @@ const load = () => {
       .then((html) => {
         okPages += 1;
         const batch = readList(html, seen);
+        if (batch.self) sawSelf = true;
         links += batch.links;
         for (let i = 0; i < batch.samples.length; i += 1) {
           const text = batch.samples[i];
@@ -840,6 +818,7 @@ const showDiag = (base, okPages, links, titles) => {
   };
   line(`게시판 주소: ${base}`);
   line(`읽은 목록 페이지: ${okPages}장 · 찾은 링크: ${links}개 · 일정으로 읽은 글: ${items.length}개`);
+  if (!boardOk && okPages > 0) line("※ 이 주소는 게시판 목록이 아닙니다 (이 달력이 있는 페이지를 가리키고 있습니다).");
   if (titles.length === 0) {
     line("목록에서 글 제목을 하나도 찾지 못했습니다.");
   } else {
@@ -1414,24 +1393,10 @@ const applyWidth = () => {
   else root.classList.remove("is-narrow");
 };
 
-const openPanel = () => {
-  root.setAttribute("data-state", "open");
-  pick("panel").hidden = false;
-  pick("gate").hidden = true;
+const start = () => {
   applyWidth();
   draw();
   load();
-};
-
-const checkPin = () => {
-  const wanted = setting("pin");
-  const typed = String(pick("pin-input").value || "").trim();
-  if (wanted === "" || typed === wanted) {
-    pick("pin-error").hidden = true;
-    openPanel();
-    return;
-  }
-  pick("pin-error").hidden = false;
 };
 
 const setup = () => {
@@ -1442,11 +1407,6 @@ const setup = () => {
   buildForm();
   compose();
   setWriteLink();
-
-  pick("pin-submit").addEventListener("click", checkPin);
-  pick("pin-input").addEventListener("keydown", (event) => {
-    if (event.key === "Enter") checkPin();
-  });
 
   pick("prev").addEventListener("click", () => move(-1));
   pick("next").addEventListener("click", () => move(1));
@@ -1482,7 +1442,7 @@ const setup = () => {
   }
   window.addEventListener("resize", applyWidth);
 
-  if (setting("pin") === "") openPanel();
+  start();
 };
 
 setup();

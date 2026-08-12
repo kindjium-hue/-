@@ -1,29 +1,17 @@
-{{!-- @name text-pin @type textfield @default 8282 @label "접속 번호" @placeholder "직원에게 알려줄 번호" --}}
 {{!-- @name text-board @type textfield @default "/37" @label "일정 게시판 주소" @placeholder "/schedule" --}}
 {{!-- @name text-write @type textfield @default "" @label "글쓰기 주소 (비우면 게시판 주소)" @placeholder "/board?mode=write" --}}
 {{!-- @name text-pages @type textfield @default 3 @label "읽어 올 목록 페이지 수" --}}
 {{!-- @name text-works @type textfield @default "누수탐지,누수피해복구,하수구,옥상방수,외벽방수,기타" @label "작업항목 (쉼표로 구분)" --}}
 {{!-- @name text-owners @type textfield @default "윤병동,송경훈,원정연" @label "담당자 (쉼표로 구분)" --}}
 
-<section class="cs-app" data-state="locked" data-view="month" data-schedule-root
-  data-pin="{{text-pin}}"
+<section class="cs-app" data-view="month" data-schedule-root
   data-board="{{text-board}}"
   data-write="{{text-write}}"
   data-pages="{{text-pages}}"
   data-works="{{text-works}}"
   data-owners="{{text-owners}}">
 
-  <div class="cs-gate" data-gate>
-    <h2 class="cs-gate__title">청명 일정</h2>
-    <p class="cs-gate__desc">직원용입니다. 접속 번호를 넣어 주세요.</p>
-    <div class="cs-gate__row">
-      <input class="cs-input" type="password" inputmode="numeric" autocomplete="off" aria-label="접속 번호" data-pin-input>
-      <button class="cs-btn" type="button" data-pin-submit>들어가기</button>
-    </div>
-    <p class="cs-gate__error" data-pin-error hidden>번호가 맞지 않습니다.</p>
-  </div>
-
-  <div class="cs-panel" data-panel hidden>
+  <div class="cs-panel" data-panel>
     <div class="cs-bar">
       <div class="cs-nav">
         <button class="cs-round" type="button" aria-label="이전" data-prev>‹</button>
