@@ -1,0 +1,550 @@
+<!--
+  ┌──────────────────────────────────────────────────────────────┐
+  │  청명 작업현황 작성 폼 — 한 파일 버전 (아임웹 코드위젯용)    │
+  └──────────────────────────────────────────────────────────────┘
+  아임웹 관리자 → 페이지 편집 → 위젯 추가 → 「코드」 → 코드 에디터 열기 →
+  이 파일 내용을 처음부터 끝까지 통째로 붙여넣으세요.
+
+  쓰는 법
+    1) 이 폼을 채운다
+    2) ① 제목 복사 → 아임웹 일정의 «상세 일정» 제목 칸에 붙여넣기
+    3) ② HTML 복사 → 본문 도구막대의 </> 를 누르고 붙여넣은 뒤 다시 </> 로 돌아오기
+    4) BEFORE·AFTER 자리에 사진을 넣고 저장
+
+  고칠 곳은 바로 아래 <section ...> 한 줄입니다.
+    · data-works="..."     작업항목 (쉼표로 구분)
+    · data-owners="..."    담당자 (쉼표로 구분)
+    · data-states="..."    진행상태 (쉼표로 구분)
+    · data-calendar=""     일정 달력 페이지 주소 (넣으면 «일정 달력 열기» 링크가 보입니다)
+
+  widget.html · widget.css · widget.js 를 합쳐 만든 파일입니다.
+  세 파일을 고친 뒤 `python3 onefile.py` 를 다시 실행하면 새로 만들어집니다.
+-->
+
+<style>
+.cw-form {
+  --ink: #17202b;
+  --muted: #67707d;
+  --edge: #e2e6eb;
+  --soft: #f4f6f8;
+  --accent: #2f6df6;
+  --mark: #fff6d6;
+  --mark-line: #e2c96a;
+  max-width: 720px;
+  margin: 0 auto;
+  color: var(--ink);
+  background: transparent;
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+               "Malgun Gothic", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.cw-form .cw-input,
+.cw-form .cw-btn { box-sizing: border-box; }
+
+.cw-form .cw-title { margin: 0 0 6px; font-size: 20px; font-weight: 700; }
+.cw-form .cw-lead {
+  margin: 0 0 18px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--muted);
+  word-break: keep-all;
+}
+
+.cw-form .cw-field { margin-bottom: 14px; }
+.cw-form .cw-grid { display: flex; gap: 12px; }
+.cw-form .cw-grid .cw-field { flex: 1 1 0; min-width: 0; }
+.cw-form .cw-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.cw-form .cw-label small { font-weight: 500; }
+.cw-form .cw-input {
+  width: 100%;
+  padding: 11px 12px;
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  background: #fbfcfd;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  appearance: none;
+}
+.cw-form .cw-area { line-height: 1.6; resize: vertical; }
+.cw-form .cw-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+.cw-form .cw-checks { display: flex; flex-wrap: wrap; gap: 8px; }
+.cw-form .cw-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 8px 11px;
+  font-size: 14px;
+  background: var(--soft);
+  border: 1px solid var(--edge);
+  border-radius: 9px;
+  cursor: pointer;
+}
+.cw-form .cw-check input { width: 18px; height: 18px; flex: none; accent-color: var(--accent); }
+.cw-form .cw-btn {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 8px;
+  padding: 11px 18px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--accent);
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.cw-form .cw-rule { margin: 20px 0; border: 0; border-top: 1px solid var(--edge); }
+.cw-form .cw-out { margin-bottom: 18px; }
+.cw-form .cw-said {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--mark);
+  border: 1px solid var(--mark-line);
+  border-radius: 9px;
+}
+.cw-form .cw-link {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* display 규칙이 hidden 속성을 덮어쓰지 않게 한다 */
+.cw-form .cw-link[hidden] { display: none; }
+
+.cw-form .cw-preview { margin-bottom: 18px; }
+.cw-form .cw-paper {
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.cw-form .cw-steps {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--muted);
+}
+
+/* 좁은 칸에서는 한 줄에 하나씩 */
+
+.cw-form.is-mobile .cw-grid { display: block; }
+.cw-form.is-mobile .cw-grid .cw-field { margin-bottom: 14px; }
+.cw-form.is-mobile .cw-input { min-height: 46px; }
+.cw-form.is-mobile .cw-check { flex: 1 1 44%; }
+.cw-form.is-mobile .cw-title { font-size: 18px; }
+.cw-form.is-mobile .cw-lead { font-size: 13px; }
+</style>
+
+<section class="cw-form" data-form-root
+  data-works="누수탐지,누수피해복구,하수구,옥상방수,외벽방수,기타"
+  data-owners="윤병동,송경훈,원정연"
+  data-states="예정,진행중,완료,보류"
+  data-calendar="">
+
+  <h2 class="cw-title">청명 작업현황 작성</h2>
+  <p class="cw-lead">
+    아래를 채우면 아임웹 일정에 넣을 <b>제목</b>과 <b>상세 내용(표)</b>이 만들어집니다.
+    복사해서 일정 <b>상세 일정</b> 화면에 붙여넣고 사진만 얹으면 됩니다.
+  </p>
+
+  <div class="cw-grid">
+    <div class="cw-field">
+      <label class="cw-label" for="cw-date">작업일</label>
+      <input class="cw-input" id="cw-date" type="date" data-date>
+    </div>
+    <div class="cw-field">
+      <label class="cw-label" for="cw-time">시간</label>
+      <input class="cw-input" id="cw-time" type="time" data-time>
+    </div>
+  </div>
+
+  <div class="cw-field">
+    <span class="cw-label">작업항목 <small>여러 개 고를 수 있습니다</small></span>
+    <div class="cw-checks" data-works-box></div>
+  </div>
+
+  <div class="cw-field">
+    <label class="cw-label" for="cw-site">현장명 · 고객명</label>
+    <input class="cw-input" id="cw-site" type="text" placeholder="예) 카카오프렌즈 지곡점" data-site>
+  </div>
+
+  <div class="cw-field">
+    <label class="cw-label" for="cw-place">장소 · 주소</label>
+    <input class="cw-input" id="cw-place" type="text" placeholder="예) 수원시 권선구 서호동로26번길 19" data-place>
+  </div>
+
+  <div class="cw-grid">
+    <div class="cw-field">
+      <label class="cw-label" for="cw-owner">담당자</label>
+      <select class="cw-input" id="cw-owner" data-owner></select>
+    </div>
+    <div class="cw-field">
+      <label class="cw-label" for="cw-state">진행상태</label>
+      <select class="cw-input" id="cw-state" data-state></select>
+    </div>
+  </div>
+
+  <div class="cw-grid">
+    <div class="cw-field">
+      <label class="cw-label" for="cw-phone">연락처</label>
+      <input class="cw-input" id="cw-phone" type="tel" inputmode="tel" placeholder="예) 010-0000-0000" data-phone>
+    </div>
+    <div class="cw-field">
+      <label class="cw-label" for="cw-cost">견적·금액</label>
+      <input class="cw-input" id="cw-cost" type="text" inputmode="numeric" placeholder="예) 6,010,000" data-cost>
+    </div>
+  </div>
+
+  <div class="cw-field">
+    <label class="cw-label" for="cw-note">진행사항 <small>한 줄에 하나씩 적으면 목록으로 들어갑니다</small></label>
+    <textarea class="cw-input cw-area" id="cw-note" rows="4" placeholder="8/12 자재 올려 둠&#10;8/14 고압세척 · 크랙보수 완료" data-note></textarea>
+  </div>
+
+  <div class="cw-field">
+    <label class="cw-label" for="cw-extra">특이사항 · 메모</label>
+    <textarea class="cw-input cw-area" id="cw-extra" rows="2" placeholder="예) 옥상 배수구 막힘 있어 추가 작업 협의 필요" data-extra></textarea>
+  </div>
+
+  <hr class="cw-rule">
+
+  <div class="cw-out">
+    <label class="cw-label" for="cw-title-out">① 일정 제목</label>
+    <textarea class="cw-input cw-area" id="cw-title-out" rows="2" readonly data-out-title></textarea>
+    <label class="cw-check">
+      <input type="checkbox" data-machine>
+      <span>달력 위젯용 형식으로 (날짜 | 작업항목 | 현장 | 담당 | 장소 | 상태)</span>
+    </label>
+    <button class="cw-btn" type="button" data-copy-title>제목 복사</button>
+  </div>
+
+  <div class="cw-out">
+    <label class="cw-label" for="cw-html-out">② 상세 내용 (HTML) <small>편집기의 &lt;/&gt; 버튼을 눌러 붙여넣으세요</small></label>
+    <textarea class="cw-input cw-area cw-code" id="cw-html-out" rows="10" readonly data-out-html></textarea>
+    <button class="cw-btn" type="button" data-copy-html>HTML 복사</button>
+  </div>
+
+  <div class="cw-out">
+    <label class="cw-label" for="cw-text-out">③ 상세 내용 (글자만) <small>HTML 붙여넣기가 안 될 때</small></label>
+    <textarea class="cw-input cw-area" id="cw-text-out" rows="8" readonly data-out-text></textarea>
+    <button class="cw-btn" type="button" data-copy-text>글자만 복사</button>
+  </div>
+
+  <p class="cw-said" data-said hidden></p>
+
+  <div class="cw-preview">
+    <span class="cw-label">들어갈 모습 미리보기</span>
+    <div class="cw-paper" data-preview></div>
+  </div>
+
+  <ol class="cw-steps">
+    <li>아임웹 달력에서 <b>작업일</b>을 눌러 <b>상세 일정</b>을 엽니다.</li>
+    <li><b>제목</b> 칸에 ①을 붙여넣습니다.</li>
+    <li>본문 도구막대의 <b>&lt;/&gt;</b> 를 누르고 ②를 붙여넣은 뒤 다시 <b>&lt;/&gt;</b> 로 돌아옵니다.</li>
+    <li><b>BEFORE</b>·<b>AFTER</b> 칸에 사진을 넣고 저장합니다.</li>
+  </ol>
+
+  <a class="cw-link" data-calendar-link hidden>일정 달력 열기 →</a>
+</section>
+
+<script>
+{
+/* 청명 작업현황 작성 폼 — 아임웹 일정(캘린더)의 «상세 일정»에 붙여넣을
+   제목과 상세 내용을 만들어 준다. 상세 내용은 편집기의 </> 버튼으로 넣는 표 형태 HTML이다. */
+
+const root = document.querySelector("[data-form-root]");
+const pick = (name) => root.querySelector(`[data-${name}]`);
+const setting = (name) => String(root.getAttribute(`data-${name}`) || "").trim();
+
+const listOf = (name) => {
+  const parts = setting(name).split(",");
+  const out = [];
+  for (let i = 0; i < parts.length; i += 1) {
+    const value = parts[i].trim();
+    if (value !== "") out.push(value);
+  }
+  return out;
+};
+
+const works = listOf("works");
+const owners = listOf("owners");
+const states = listOf("states");
+
+const MOBILE_MAX = 560;
+const CELL = "padding:7px 10px;border:1px solid #d8dee6";
+const HEAD = `width:92px;background:#f2f5f9;font-weight:700;${CELL}`;
+const LABEL = "margin:18px 0 6px;font-weight:700;font-size:15px";
+const GHOST = "margin:0 0 14px;color:#98a1ad;font-size:14px";
+
+/** 붙여넣을 HTML에 사람이 쓴 글자를 안전하게 넣는다 */
+const safe = (text) =>
+  String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+const value = (name) => String(pick(name).value || "").trim();
+
+const chosenWorks = () => {
+  const boxes = pick("works-box").querySelectorAll("input");
+  const out = [];
+  for (let i = 0; i < boxes.length; i += 1) {
+    if (boxes[i].checked) out.push(boxes[i].getAttribute("data-work"));
+  }
+  return out;
+};
+
+const lines = (text) => {
+  const raw = String(text || "").split("\n");
+  const out = [];
+  for (let i = 0; i < raw.length; i += 1) {
+    const line = raw[i].trim();
+    if (line !== "") out.push(line);
+  }
+  return out;
+};
+
+const dateText = (date, time) => {
+  if (date === "") return "";
+  const parts = date.split("-");
+  const day = `${parts[0]}년 ${Number(parts[1])}월 ${Number(parts[2])}일`;
+  return time !== "" ? `${day} ${time}` : day;
+};
+
+/** 아임웹 일정에 넣을 표 형태 상세 내용 */
+const buildHtml = (data) => {
+  const rows = [];
+  const row = (name, text) => {
+    if (text === "") return;
+    rows.push(`<tr><td style="${HEAD}">${name}</td><td style="${CELL}">${safe(text)}</td></tr>`);
+  };
+  row("작업항목", data.works.join(", "));
+  row("일시", dateText(data.date, data.time));
+  row("현장", data.site);
+  row("장소", data.place);
+  row("담당자", data.owner);
+  row("연락처", data.phone);
+  row("견적·금액", data.cost === "" ? "" : `${data.cost}원`);
+  row("진행상태", data.state);
+
+  const out = [];
+  if (rows.length > 0) {
+    out.push('<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.7">');
+    out.push(`<tbody>${rows.join("")}</tbody>`);
+    out.push("</table>");
+  }
+
+  out.push(`<p style="${LABEL}">진행사항</p>`);
+  if (data.note.length > 0) {
+    const items = [];
+    for (let i = 0; i < data.note.length; i += 1) items.push(`<li>${safe(data.note[i])}</li>`);
+    out.push(`<ul style="margin:0 0 14px;padding-left:20px;font-size:14px;line-height:1.8">${items.join("")}</ul>`);
+  } else {
+    out.push(`<p style="${GHOST}">작업이 진행될 때마다 날짜와 함께 여기에 적어 주세요.</p>`);
+  }
+
+  if (data.extra !== "") {
+    out.push(`<p style="${LABEL}">특이사항</p>`);
+    out.push(`<p style="margin:0 0 14px;font-size:14px;line-height:1.8">${safe(data.extra)}</p>`);
+  }
+
+  out.push(`<p style="${LABEL}">BEFORE</p>`);
+  out.push(`<p style="${GHOST}">작업 전 사진을 이 자리에 넣어 주세요.</p>`);
+  out.push(`<p style="${LABEL}">AFTER</p>`);
+  out.push(`<p style="${GHOST}">작업 후 사진을 이 자리에 넣어 주세요.</p>`);
+  return out.join("\n");
+};
+
+/** HTML 붙여넣기가 안 되는 편집기를 위한 글자만 버전 */
+const buildText = (data) => {
+  const out = [];
+  const row = (name, text) => {
+    if (text !== "") out.push(`${name}: ${text}`);
+  };
+  row("작업항목", data.works.join(", "));
+  row("일시", dateText(data.date, data.time));
+  row("현장", data.site);
+  row("장소", data.place);
+  row("담당자", data.owner);
+  row("연락처", data.phone);
+  row("견적·금액", data.cost === "" ? "" : `${data.cost}원`);
+  row("진행상태", data.state);
+
+  out.push("");
+  out.push("[진행사항]");
+  if (data.note.length > 0) {
+    for (let i = 0; i < data.note.length; i += 1) out.push(`- ${data.note[i]}`);
+  } else {
+    out.push("(작업이 진행될 때마다 날짜와 함께 적어 주세요)");
+  }
+  if (data.extra !== "") {
+    out.push("");
+    out.push("[특이사항]");
+    out.push(data.extra);
+  }
+  out.push("");
+  out.push("[BEFORE]");
+  out.push("(작업 전 사진)");
+  out.push("");
+  out.push("[AFTER]");
+  out.push("(작업 후 사진)");
+  return out.join("\n");
+};
+
+/** 달력 칸에 보일 제목 */
+const buildTitle = (data) => {
+  if (pick("machine").checked) {
+    const dash = (text) => (text === "" ? "-" : text);
+    if (data.date === "") return "작업일을 먼저 고르세요";
+    return `${data.date}${data.time !== "" ? ` ${data.time}` : ""} | ${dash(data.works.join(", "))}`
+      + ` | ${dash(data.site)} | ${dash(data.owner)} | ${dash(data.place)} | ${data.state}`;
+  }
+  const head = [];
+  if (data.time !== "") head.push(data.time);
+  if (data.site !== "") head.push(data.site);
+  if (head.length === 0) head.push("작업");
+  const tail = [];
+  if (data.works.length > 0) tail.push(data.works.join("·"));
+  if (data.owner !== "") tail.push(data.owner);
+  const state = data.state !== "" && data.state !== "예정" ? ` [${data.state}]` : "";
+  return `${head.join(" ")}${tail.length > 0 ? ` · ${tail.join(" · ")}` : ""}${state}`;
+};
+
+const compose = () => {
+  const data = {
+    date: value("date"),
+    time: value("time"),
+    works: chosenWorks(),
+    site: value("site"),
+    place: value("place"),
+    owner: value("owner"),
+    state: value("state"),
+    phone: value("phone"),
+    cost: value("cost"),
+    note: lines(pick("note").value),
+    extra: value("extra"),
+  };
+  const html = buildHtml(data);
+  pick("out-title").value = buildTitle(data);
+  pick("out-html").value = html;
+  pick("out-text").value = buildText(data);
+  pick("preview").innerHTML = html;
+};
+
+const said = (text) => {
+  const box = pick("said");
+  box.textContent = text;
+  box.hidden = false;
+};
+
+const copyFrom = (area, name) => {
+  const text = area.value;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(
+      () => said(`${name}을 복사했습니다.`),
+      () => {
+        area.select();
+        said(`${name}을 선택해 두었습니다. Command + C 를 누르세요.`);
+      }
+    );
+    return;
+  }
+  area.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch (error) { ok = false; }
+  said(ok ? `${name}을 복사했습니다.` : `${name}을 선택해 두었습니다. Command + C 를 누르세요.`);
+};
+
+const fillOptions = (box, values) => {
+  for (let i = 0; i < values.length; i += 1) {
+    const option = document.createElement("option");
+    option.setAttribute("value", values[i]);
+    option.textContent = values[i];
+    box.appendChild(option);
+  }
+};
+
+const today = () => {
+  const now = new Date();
+  const month = `0${now.getMonth() + 1}`.slice(-2);
+  const day = `0${now.getDate()}`.slice(-2);
+  return `${now.getFullYear()}-${month}-${day}`;
+};
+
+const applyWidth = () => {
+  const width = root.offsetWidth || window.innerWidth || 0;
+  if (width <= 0) return;
+  if (width < MOBILE_MAX) root.classList.add("is-mobile");
+  else root.classList.remove("is-mobile");
+};
+
+const setup = () => {
+  if (!root) return;
+
+  const box = pick("works-box");
+  for (let i = 0; i < works.length; i += 1) {
+    const label = document.createElement("label");
+    label.className = "cw-check";
+    const input = document.createElement("input");
+    input.setAttribute("type", "checkbox");
+    input.setAttribute("data-work", works[i]);
+    input.addEventListener("change", compose);
+    const text = document.createElement("span");
+    text.textContent = works[i];
+    label.appendChild(input);
+    label.appendChild(text);
+    box.appendChild(label);
+  }
+  fillOptions(pick("owner"), owners);
+  fillOptions(pick("state"), states);
+  pick("date").value = today();
+
+  const watched = ["date", "time", "site", "place", "owner", "state", "phone", "cost", "note", "extra", "machine"];
+  for (let i = 0; i < watched.length; i += 1) {
+    pick(watched[i]).addEventListener("input", compose);
+    pick(watched[i]).addEventListener("change", compose);
+  }
+
+  pick("copy-title").addEventListener("click", () => copyFrom(pick("out-title"), "제목"));
+  pick("copy-html").addEventListener("click", () => copyFrom(pick("out-html"), "HTML"));
+  pick("copy-text").addEventListener("click", () => copyFrom(pick("out-text"), "글자"));
+
+  const calendar = setting("calendar");
+  if (calendar !== "") {
+    const link = pick("calendar-link");
+    link.setAttribute("href", calendar);
+    link.setAttribute("target", "_blank");
+    link.setAttribute("rel", "noopener");
+    link.hidden = false;
+  }
+
+  compose();
+  applyWidth();
+  if (typeof ResizeObserver === "function") {
+    const watcher = new ResizeObserver(() => applyWidth());
+    watcher.observe(root);
+  }
+  window.addEventListener("resize", applyWidth);
+};
+
+setup();
+}
+</script>

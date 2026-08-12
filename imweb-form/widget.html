@@ -1,0 +1,115 @@
+{{!-- @name text-works @type textfield @default "누수탐지,누수피해복구,하수구,옥상방수,외벽방수,기타" @label "작업항목 (쉼표로 구분)" --}}
+{{!-- @name text-owners @type textfield @default "윤병동,송경훈,원정연" @label "담당자 (쉼표로 구분)" --}}
+{{!-- @name text-states @type textfield @default "예정,진행중,완료,보류" @label "진행상태 (쉼표로 구분)" --}}
+{{!-- @name text-calendar @type textfield @default "" @label "일정 달력 페이지 주소 (링크로 보여 줍니다)" @placeholder "/schedule" --}}
+
+<section class="cw-form" data-form-root
+  data-works="{{text-works}}"
+  data-owners="{{text-owners}}"
+  data-states="{{text-states}}"
+  data-calendar="{{text-calendar}}">
+
+  <h2 class="cw-title">청명 작업현황 작성</h2>
+  <p class="cw-lead">
+    아래를 채우면 아임웹 일정에 넣을 <b>제목</b>과 <b>상세 내용(표)</b>이 만들어집니다.
+    복사해서 일정 <b>상세 일정</b> 화면에 붙여넣고 사진만 얹으면 됩니다.
+  </p>
+
+  <div class="cw-grid">
+    <div class="cw-field">
+      <label class="cw-label" for="cw-date">작업일</label>
+      <input class="cw-input" id="cw-date" type="date" data-date>
+    </div>
+    <div class="cw-field">
+      <label class="cw-label" for="cw-time">시간</label>
+      <input class="cw-input" id="cw-time" type="time" data-time>
+    </div>
+  </div>
+
+  <div class="cw-field">
+    <span class="cw-label">작업항목 <small>여러 개 고를 수 있습니다</small></span>
+    <div class="cw-checks" data-works-box></div>
+  </div>
+
+  <div class="cw-field">
+    <label class="cw-label" for="cw-site">현장명 · 고객명</label>
+    <input class="cw-input" id="cw-site" type="text" placeholder="예) 카카오프렌즈 지곡점" data-site>
+  </div>
+
+  <div class="cw-field">
+    <label class="cw-label" for="cw-place">장소 · 주소</label>
+    <input class="cw-input" id="cw-place" type="text" placeholder="예) 수원시 권선구 서호동로26번길 19" data-place>
+  </div>
+
+  <div class="cw-grid">
+    <div class="cw-field">
+      <label class="cw-label" for="cw-owner">담당자</label>
+      <select class="cw-input" id="cw-owner" data-owner></select>
+    </div>
+    <div class="cw-field">
+      <label class="cw-label" for="cw-state">진행상태</label>
+      <select class="cw-input" id="cw-state" data-state></select>
+    </div>
+  </div>
+
+  <div class="cw-grid">
+    <div class="cw-field">
+      <label class="cw-label" for="cw-phone">연락처</label>
+      <input class="cw-input" id="cw-phone" type="tel" inputmode="tel" placeholder="예) 010-0000-0000" data-phone>
+    </div>
+    <div class="cw-field">
+      <label class="cw-label" for="cw-cost">견적·금액</label>
+      <input class="cw-input" id="cw-cost" type="text" inputmode="numeric" placeholder="예) 6,010,000" data-cost>
+    </div>
+  </div>
+
+  <div class="cw-field">
+    <label class="cw-label" for="cw-note">진행사항 <small>한 줄에 하나씩 적으면 목록으로 들어갑니다</small></label>
+    <textarea class="cw-input cw-area" id="cw-note" rows="4" placeholder="8/12 자재 올려 둠&#10;8/14 고압세척 · 크랙보수 완료" data-note></textarea>
+  </div>
+
+  <div class="cw-field">
+    <label class="cw-label" for="cw-extra">특이사항 · 메모</label>
+    <textarea class="cw-input cw-area" id="cw-extra" rows="2" placeholder="예) 옥상 배수구 막힘 있어 추가 작업 협의 필요" data-extra></textarea>
+  </div>
+
+  <hr class="cw-rule">
+
+  <div class="cw-out">
+    <label class="cw-label" for="cw-title-out">① 일정 제목</label>
+    <textarea class="cw-input cw-area" id="cw-title-out" rows="2" readonly data-out-title></textarea>
+    <label class="cw-check">
+      <input type="checkbox" data-machine>
+      <span>달력 위젯용 형식으로 (날짜 | 작업항목 | 현장 | 담당 | 장소 | 상태)</span>
+    </label>
+    <button class="cw-btn" type="button" data-copy-title>제목 복사</button>
+  </div>
+
+  <div class="cw-out">
+    <label class="cw-label" for="cw-html-out">② 상세 내용 (HTML) <small>편집기의 &lt;/&gt; 버튼을 눌러 붙여넣으세요</small></label>
+    <textarea class="cw-input cw-area cw-code" id="cw-html-out" rows="10" readonly data-out-html></textarea>
+    <button class="cw-btn" type="button" data-copy-html>HTML 복사</button>
+  </div>
+
+  <div class="cw-out">
+    <label class="cw-label" for="cw-text-out">③ 상세 내용 (글자만) <small>HTML 붙여넣기가 안 될 때</small></label>
+    <textarea class="cw-input cw-area" id="cw-text-out" rows="8" readonly data-out-text></textarea>
+    <button class="cw-btn" type="button" data-copy-text>글자만 복사</button>
+  </div>
+
+  <p class="cw-said" data-said hidden></p>
+
+  <div class="cw-preview">
+    <span class="cw-label">들어갈 모습 미리보기</span>
+    <div class="cw-paper" data-preview></div>
+  </div>
+
+  <ol class="cw-steps">
+    <li>아임웹 달력에서 <b>작업일</b>을 눌러 <b>상세 일정</b>을 엽니다.</li>
+    <li><b>제목</b> 칸에 ①을 붙여넣습니다.</li>
+    <li>본문 도구막대의 <b>&lt;/&gt;</b> 를 누르고 ②를 붙여넣은 뒤 다시 <b>&lt;/&gt;</b> 로 돌아옵니다.</li>
+    <li><b>BEFORE</b>·<b>AFTER</b> 칸에 사진을 넣고 저장합니다.</li>
+  </ol>
+
+  <a class="cw-link" data-calendar-link hidden>일정 달력 열기 →</a>
+</section>

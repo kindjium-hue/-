@@ -161,6 +161,7 @@
   border-color: var(--today-line);
   text-align: left;
 }
+.cs-app .cs-jump[hidden] { display: none; }
 .cs-app .cs-diag {
   margin-bottom: 10px;
   padding: 10px 12px;

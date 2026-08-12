@@ -107,6 +107,8 @@
   color: var(--accent);
   text-decoration: none;
 }
+/* display 규칙이 hidden 속성을 덮어쓰지 않게 한다 */
+.iw-quote .iw-link[hidden] { display: none; }
 
 /* ------------------------------------------------- 보기 전환 · 요약(단가 조절) */
 
