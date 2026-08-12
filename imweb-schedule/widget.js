@@ -129,19 +129,23 @@ const load = () => {
   const seen = {};
   const gathered = [];
   let links = 0;
+  let okPages = 0;
   let failed = "";
 
   const step = (page) => {
     if (page > pages) {
       loading = false;
-      boardOk = failed === "";
+      boardOk = okPages > 0;
       setWriteLink();
       items = gathered;
       items.sort((a, b) => (a.key + a.time < b.key + b.time ? -1 : 1));
       if (items.length > 0) {
         say(`게시판에서 일정 ${items.length}개를 읽었습니다.`);
-      } else if (failed !== "") {
+      } else if (okPages === 0) {
         say(`게시판을 읽지 못했습니다 (${failed}). 주소가 맞는지, 같은 사이트 안의 주소인지 확인해 주세요.`, true);
+      } else if (links === 0) {
+        say("게시판은 열렸지만 글 목록을 찾지 못했습니다. 게시판 스킨이 목록을 자바스크립트로 "
+          + "그리는 형태일 수 있습니다. 게시판 유형을 «일반형»이나 «갤러리형»으로 바꿔 보세요.", true);
       } else {
         say(`게시판은 열렸지만(링크 ${links}개) 규칙에 맞는 일정 글이 없습니다. `
           + "글 제목이 «2026-08-14 09:00 | 옥상방수 | 현장명 | 담당자 | 장소 | 예정» 형태인지 확인해 주세요.", true);
@@ -155,13 +159,15 @@ const load = () => {
         return response.text();
       })
       .then((html) => {
+        okPages += 1;
         const batch = readList(html, seen);
         links += batch.links;
         for (let i = 0; i < batch.items.length; i += 1) gathered.push(batch.items[i]);
         step(page + 1);
       })
       .catch((error) => {
-        if (failed === "") failed = String(error.message || error);
+        // 첫 장이 안 열렸을 때만 오류로 본다 (뒷장이 없는 건 정상)
+        if (okPages === 0 && failed === "") failed = String(error.message || error);
         step(pages + 1);
       });
   };
