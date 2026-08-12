@@ -167,6 +167,33 @@
   line-height: 1.7;
 }
 
+.cs-app .cs-jump {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 11px 12px;
+  color: var(--ink);
+  background: var(--today);
+  border-color: var(--today-line);
+  text-align: left;
+}
+.cs-app .cs-diag {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  background: var(--soft);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+}
+.cs-app .cs-diag__head { font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.cs-app .cs-diag__body { margin-top: 8px; }
+.cs-app .cs-diag__line {
+  padding: 2px 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
 /* ------------------------------------------------------------------ 달력 */
 
 .cs-app .cs-grid {

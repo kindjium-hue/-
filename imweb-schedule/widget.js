@@ -88,22 +88,59 @@ const parseTitle = (text) => {
   };
 };
 
+/** 제목 글자가 링크 안에 없을 때, 가까운 곳에서 링크를 찾는다 */
+const linkNear = (el) => {
+  const inside = el.closest ? el.closest("a[href]") : null;
+  if (inside) return inside.getAttribute("href") || "";
+  let up = el.parentElement;
+  for (let i = 0; i < 5 && up; i += 1) {
+    const link = up.querySelector("a[href]");
+    if (link) return link.getAttribute("href") || "";
+    up = up.parentElement;
+  }
+  return "";
+};
+
 /** 게시판 목록 HTML에서 일정 글을 골라낸다 */
 const readList = (html, seen) => {
   const doc = new DOMParser().parseFromString(html, "text/html");
   const links = doc.querySelectorAll("a[href]");
   const found = [];
-  for (let i = 0; i < links.length; i += 1) {
-    const link = links[i];
-    const item = parseTitle(link.textContent);
-    if (!item) continue;
-    const href = link.getAttribute("href") || "";
-    if (href !== "" && seen[href] === true) continue;
-    if (href !== "") seen[href] = true;
+  const samples = [];
+
+  const note = (text) => {
+    if (text.length < 6 || text.length > 120) return;
+    if (samples.length >= 8 || samples.indexOf(text) >= 0) return;
+    samples.push(text);
+  };
+
+  const take = (element, text) => {
+    const item = parseTitle(text);
+    if (!item) return;
+    const href = linkNear(element);
+    const mark = href !== "" ? href : text;
+    if (seen[mark] === true) return;
+    seen[mark] = true;
     item.url = href;
     found.push(item);
+  };
+
+  for (let i = 0; i < links.length; i += 1) {
+    const text = String(links[i].textContent || "").replace(/\s+/g, " ").trim();
+    note(text);
+    take(links[i], text);
   }
-  return { items: found, links: links.length };
+
+  // 갤러리형처럼 제목이 링크 밖(div·td·h3 등)에 있는 스킨
+  const leaves = doc.querySelectorAll("h1,h2,h3,h4,h5,p,div,span,td,li,strong,b,em");
+  for (let i = 0; i < leaves.length; i += 1) {
+    if (leaves[i].children.length > 0) continue;
+    const text = String(leaves[i].textContent || "").replace(/\s+/g, " ").trim();
+    if (text === "" || text.length > 300) continue;
+    note(text);
+    take(leaves[i], text);
+  }
+  return { items: found, links: links.length, samples: samples };
 };
 
 const pageUrl = (base, page) => {
@@ -131,6 +168,7 @@ const load = () => {
   const pages = Math.max(1, Math.min(10, Number(setting("pages")) || 1));
   const seen = {};
   const gathered = [];
+  const seenTitles = [];
   let links = 0;
   let okPages = 0;
   let failed = "";
@@ -153,6 +191,7 @@ const load = () => {
         say(`게시판은 열렸지만(링크 ${links}개) 규칙에 맞는 일정 글이 없습니다. `
           + "글 제목이 «2026-08-14 09:00 | 옥상방수 | 현장명 | 담당자 | 장소 | 예정» 형태인지 확인해 주세요.", true);
       }
+      showDiag(base, okPages, links, seenTitles);
       draw();
       return;
     }
@@ -165,6 +204,10 @@ const load = () => {
         okPages += 1;
         const batch = readList(html, seen);
         links += batch.links;
+        for (let i = 0; i < batch.samples.length; i += 1) {
+          const text = batch.samples[i];
+          if (seenTitles.length < 8 && seenTitles.indexOf(text) < 0) seenTitles.push(text);
+        }
         for (let i = 0; i < batch.items.length; i += 1) gathered.push(batch.items[i]);
         step(page + 1);
       })
@@ -175,6 +218,27 @@ const load = () => {
       });
   };
   step(1);
+};
+
+/** 무엇을 읽었는지 그대로 보여 준다 (달력이 비었을 때 원인을 찾기 위해) */
+const showDiag = (base, okPages, links, titles) => {
+  const box = pick("diag-body");
+  box.textContent = "";
+  const line = (text) => {
+    const row = document.createElement("div");
+    row.className = "cs-diag__line";
+    row.textContent = text;
+    box.appendChild(row);
+  };
+  line(`게시판 주소: ${base}`);
+  line(`읽은 목록 페이지: ${okPages}장 · 찾은 링크: ${links}개 · 일정으로 읽은 글: ${items.length}개`);
+  if (titles.length === 0) {
+    line("목록에서 글 제목을 하나도 찾지 못했습니다.");
+  } else {
+    line("목록에서 본 글자 (제목으로 보이는 것들):");
+    for (let i = 0; i < titles.length; i += 1) line(`· ${titles[i]}`);
+  }
+  pick("diag").hidden = false;
 };
 
 /* -------------------------------------------------------------- 사진 읽기 */
@@ -437,6 +501,38 @@ const dayView = () => {
   for (let i = 0; i < day.length; i += 1) list.appendChild(card(day[i]));
 };
 
+/** 지금 보고 있는 달·주에 일정이 없으면 가장 가까운 일정으로 옮길 수 있게 한다 */
+const checkEmptyView = () => {
+  const jump = pick("jump");
+  if (items.length === 0) {
+    jump.hidden = true;
+    return;
+  }
+  const week = root.getAttribute("data-view") === "week";
+  const from = week ? keyOf(weekStart(cursor)) : keyOf(new Date(cursor.getFullYear(), cursor.getMonth(), 1));
+  const to = week
+    ? keyOf(addDays(weekStart(cursor), 6))
+    : keyOf(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0));
+
+  let inside = 0;
+  for (let i = 0; i < items.length; i += 1) {
+    if (items[i].key >= from && items[i].key <= to) inside += 1;
+  }
+  if (inside > 0) {
+    jump.hidden = true;
+    return;
+  }
+
+  const today = todayKey();
+  let target = items[items.length - 1];
+  for (let i = 0; i < items.length; i += 1) {
+    if (items[i].key >= today) { target = items[i]; break; }
+  }
+  jump.textContent = `${longDate(target.key)} 일정으로 이동 (${items.length}건 중 가장 가까운 날)`;
+  jump.hidden = false;
+  jump.setAttribute("data-target", target.key);
+};
+
 const draw = () => {
   const box = pick("cal");
   box.textContent = "";
@@ -451,6 +547,7 @@ const draw = () => {
     monthView(box);
   }
   dayView();
+  checkEmptyView();
 };
 
 const choose = (key) => {
@@ -751,6 +848,13 @@ const setup = () => {
     draw();
   });
   pick("reload").addEventListener("click", load);
+  pick("jump").addEventListener("click", () => {
+    const key = pick("jump").getAttribute("data-target") || "";
+    if (key === "") return;
+    cursor = fromKey(key);
+    chosen = key;
+    draw();
+  });
   pick("view-month").addEventListener("click", () => setView("month"));
   pick("view-week").addEventListener("click", () => setView("week"));
 
