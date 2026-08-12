@@ -1,0 +1,75 @@
+.cp-probe {
+  --ink: #17202b;
+  --muted: #67707d;
+  --edge: #e2e6eb;
+  --soft: #f4f6f8;
+  --accent: #2f6df6;
+  --warn: #fdf1e6;
+  --warn-line: #f0d3b6;
+  max-width: 760px;
+  margin: 0 auto;
+  color: var(--ink);
+  background: transparent;
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+               "Malgun Gothic", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.cp-probe .cp-btn { box-sizing: border-box; }
+.cp-probe .cp-title { margin: 0 0 8px; font-size: 19px; font-weight: 700; }
+.cp-probe .cp-lead {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--muted);
+  word-break: keep-all;
+}
+.cp-probe .cp-steps {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.9;
+}
+.cp-probe .cp-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.cp-probe .cp-btn {
+  flex: 1 1 auto;
+  min-height: 44px;
+  padding: 11px 16px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--soft);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.cp-probe .cp-btn--main { color: #ffffff; background: var(--accent); border-color: var(--accent); }
+.cp-probe .cp-btn--ghost { color: var(--muted); }
+.cp-probe .cp-safe {
+  margin: 0 0 12px;
+  padding: 11px 13px;
+  font-size: 13px;
+  line-height: 1.7;
+  background: var(--warn);
+  border: 1px solid var(--warn-line);
+  border-radius: 10px;
+  word-break: keep-all;
+}
+.cp-probe .cp-count { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.cp-probe .cp-out {
+  max-height: 460px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--ink);
+  background: #ffffff;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+}
