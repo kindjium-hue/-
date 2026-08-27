@@ -106,14 +106,11 @@ def main():
             h[4:8] = struct.pack('<I', mask)
             h[12:14] = struct.pack('<H', 1)   # 글자모양 개수
             h[14:16] = struct.pack('<H', 0)   # 영역 태그 개수
-            h[16:18] = struct.pack('<H', 1)   # 줄 정보 개수
+            h[16:18] = struct.pack('<H', 0)   # 줄 정보 없음 → 한글이 다시 계산
             h[18:22] = struct.pack('<I', inst); inst += 1
-            seg = bytearray(tseg[:36])
-            seg[0:4] = b'\x00\x00\x00\x00'    # 줄 시작 위치
             built.append([PARA_HEADER, plvl, bytes(h)])
             built.append([PARA_TEXT, plvl + 1, raw])
             built.append([PARA_CHAR_SHAPE, plvl + 1, struct.pack('<II', 0, shape_id)])
-            built.append([PARA_LINE_SEG, plvl + 1, bytes(seg)])
             if k == 0:
                 built.extend(extra)
 
@@ -121,6 +118,19 @@ def main():
         lh[0:4] = struct.pack('<I', len(texts))
         new_recs[li] = [LIST_HEADER, recs[li][1], bytes(lh)]
         new_recs[li + 1:end] = built
+
+    # 저장된 줄 배치 정보를 모두 지운다. 남겨 두면 표 높이가 바뀔 때
+    # 한글이 옛 좌표대로 그려 글자가 겹쳐 보인다.
+    stripped = []
+    for tag, lvl, p in new_recs:
+        if tag == PARA_LINE_SEG:
+            continue
+        if tag == PARA_HEADER:
+            p = bytearray(p)
+            p[16:18] = struct.pack('<H', 0)
+            p = bytes(p)
+        stripped.append([tag, lvl, p])
+    new_recs = stripped
 
     out_section = serialize(new_recs)
     streams['BodyText/Section0'] = zlib.compress(out_section, 9)[2:-4]
